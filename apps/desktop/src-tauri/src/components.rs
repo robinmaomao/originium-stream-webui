@@ -78,7 +78,12 @@ pub async fn install(app: &AppHandle, store: &Store, id: &str) -> AppResult<Inst
         .ok_or_else(|| AppError::component(format!("组件 {id} 未配置下载地址")))?;
 
     emit_progress(app, id, "downloading", 5, "正在下载组件…");
-    let response = reqwest::get(&url).await?;
+    let client = reqwest::Client::builder()
+        .connect_timeout(std::time::Duration::from_secs(20))
+        .timeout(std::time::Duration::from_secs(900))
+        .user_agent("Originium-Stream/0.1.0")
+        .build()?;
+    let response = client.get(&url).send().await?;
     if !response.status().is_success() {
         return Err(AppError::component(format!(
             "下载组件失败: HTTP {}",
