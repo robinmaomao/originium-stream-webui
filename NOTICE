@@ -21,11 +21,19 @@ Third-party components
 
 This application orchestrates and can redistribute the following GPL-3.0 projects:
 
-- Sunshine — https://github.com/LizardByte/Sunshine
-  Copyright (C) LizardByte contributors. GPL-3.0.
+- Sunshine — https://github.com/SunshineStream/Sunshine
+  Copyright (C) Sunshine contributors. GPL-3.0.
+
+- Originium Sunshine fork — https://github.com/robinmaomao/originium-sunshine
+  Modified by Originium Stream contributors. Adds `GET /api/session`.
+  Corresponding source: tag `v2026.1119-org.1`. GPL-3.0.
 
 - moonlight-qt — https://github.com/moonlight-stream/moonlight-qt
   Copyright (C) Moonlight Game Streaming Project contributors. GPL-3.0.
+
+- Originium Moonlight fork — https://github.com/robinmaomao/originium-moonlight
+  Modified by Originium Stream contributors. Adds the local control pipe.
+  Corresponding source: tag `v6.2.0-org.1`. GPL-3.0.
 
 Trademarks and names belong to their respective owners. Originium Stream is an
 independent project and is not endorsed by the Sunshine or Moonlight projects.
