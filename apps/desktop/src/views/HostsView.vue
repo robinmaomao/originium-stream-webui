@@ -152,8 +152,12 @@ async function resetFingerprint(host: Host) {
 }
 
 async function detail(host: Host) {
-  await hosts.setActive(host.id)
-  await router.push(`/host/${host.id}`)
+  try {
+    await hosts.setActive(host.id)
+    await router.push(`/host/${host.id}`)
+  } catch (error) {
+    app.notify(api.errorMessage(error), 'error')
+  }
 }
 
 function onPaired() {

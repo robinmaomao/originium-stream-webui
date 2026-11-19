@@ -24,7 +24,15 @@ export const useHostsStore = defineStore('hosts', {
       try {
         this.hosts = await api.listHosts()
         const app = useAppStore()
-        if (app.config) app.config.hosts = this.hosts
+        if (app.config) {
+          app.config.hosts = this.hosts
+          const active = app.config.activeHost
+          if (active && this.hosts.some((host) => host.id === active)) {
+            this.activeId = active
+          } else {
+            this.activeId = null
+          }
+        }
       } catch (error) {
         useAppStore().notify(api.errorMessage(error), 'error')
       } finally {
@@ -53,6 +61,7 @@ export const useHostsStore = defineStore('hosts', {
     },
     async remove(id: string) {
       await api.removeHost(id)
+      if (this.activeId === id) this.activeId = null
       await this.refresh()
     },
     async addDiscovered(discovered: DiscoveredHost) {
@@ -61,16 +70,21 @@ export const useHostsStore = defineStore('hosts', {
       return host
     },
     async setActive(id: string | null) {
-      this.activeId = id
       await api.setActiveHost(id)
+      this.activeId = id
+      const app = useAppStore()
+      if (app.config) app.config.activeHost = id
     },
     async test(input: HostInput) {
       return api.testHost(input)
     },
     async connect(id: string) {
       const config = await api.connectHost(id)
-      this.activeId = id
       await api.setActiveHost(id)
+      this.activeId = id
+      const app = useAppStore()
+      if (app.config) app.config.activeHost = id
+      await this.refresh()
       return config
     },
     async pair(hostId: string, pin: string, name?: string): Promise<PairingResult> {

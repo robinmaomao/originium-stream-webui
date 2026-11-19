@@ -35,7 +35,7 @@
 
     <div class="px-4 d-flex flex-wrap ga-2">
       <v-chip size="small" variant="tonal" :color="host.paired ? 'success' : 'warning'">
-        {{ host.paired ? t('common.pair') : t('hosts.pairPin') }}
+        {{ host.paired ? t('hosts.paired') : t('hosts.unpaired') }}
       </v-chip>
       <v-chip size="small" variant="tonal" color="info">
         {{ host.source === 'mdns' ? 'mDNS' : t('hosts.addManual') }}

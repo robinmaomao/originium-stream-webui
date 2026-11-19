@@ -116,6 +116,7 @@ export const getServiceStatus = () => invoke<ServiceStatus>('get_service_status'
 export const startSunshineService = () => invoke<ServiceStatus>('start_sunshine_service')
 export const stopSunshineService = () => invoke<ServiceStatus>('stop_sunshine_service')
 export const installSunshineService = () => invoke<ServiceStatus>('install_sunshine_service')
+export const uninstallSunshineService = () => invoke<ServiceStatus>('uninstall_sunshine_service')
 export const addFirewallRules = () => invoke<void>('add_firewall_rules')
 export const setSunshineCredentials = (username: string, password: string) =>
   invoke<void>('set_sunshine_credentials', { username, password })
@@ -142,7 +143,9 @@ export const getTheme = () => invoke<ThemeConfig>('get_theme')
 export const listThemePresets = () => invoke<ThemePreset[]>('list_theme_presets')
 export const saveTheme = (theme: ThemeConfig) => invoke<ThemeConfig>('save_theme', { theme })
 export const exportTheme = () => invoke<string>('export_theme')
+export const exportThemeFile = (path: string) => invoke<void>('export_theme_file', { path })
 export const importTheme = (json: string) => invoke<ThemeConfig>('import_theme', { json })
+export const importThemeFile = (path: string) => invoke<ThemeConfig>('import_theme_file', { path })
 export const importAsset = (kind: 'font' | 'background', path: string) =>
   invoke<string>('import_asset', { kind, path })
 export const listAssets = () => invoke<AssetsInfo>('list_assets')

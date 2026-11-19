@@ -33,9 +33,11 @@ portability. The schema is versioned.
 - `typography.fontFamily` becomes `--originium-font`; `scale` becomes
   `--originium-scale`.
 - Imported fonts are registered via generated `@font-face` rules using
-  `asset:`/data URLs; supported formats: woff2, woff, ttf, otf (≤ 20 MB).
+  `asset:`/data URLs; supported formats: woff2, woff, ttf, otf (max 64 MB).
 - Background images are copied into the app data directory and rendered in a
-  fixed, blurred, opacity-controlled layer (≤ 30 MB; png/jpg/webp/gif).
+  fixed, blurred, opacity-controlled layer (max 64 MB; png/jpg/webp/gif).
+  Asset paths are confined to `fonts/` and `backgrounds/`; traversal and
+  non-file paths are rejected.
 - `effects.motion = false` disables animations and transitions.
 - Light themes are detected from background luminance and switch Vuetify to
   light mode automatically.
@@ -58,6 +60,9 @@ in the onboarding/settings UI.
 
 ## Import / export
 
-- **Export** downloads the current theme as JSON.
-- **Import** reads JSON from the clipboard, validates colors, sizes and asset
-  existence, then rolls back on failure.
+- **Export** opens a save dialog and writes the current theme as a JSON file
+  through the backend.
+- **Import** opens a JSON file picker, runs the same validation as the editor
+  (version, colors, background asset existence, size limits), and only applies
+  the theme after validation succeeds. Invalid imports leave the active theme
+  unchanged.

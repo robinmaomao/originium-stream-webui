@@ -40,7 +40,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { openPath } from '@tauri-apps/plugin-opener'
 import * as api from '@/api'
@@ -59,6 +59,7 @@ const selectedHost = ref<string>('')
 const logPath = ref<string | null>(null)
 const hostLoading = ref(false)
 let timer: number | null = null
+let hostRequest = 0
 
 const hostOptions = computed(() => hosts.hosts.map((host) => ({ title: host.name, value: host.id })))
 
@@ -76,13 +77,22 @@ onUnmounted(() => {
   if (timer !== null) window.clearInterval(timer)
 })
 
+watch(tab, (value) => {
+  if (value === 'host' && selectedHost.value && !logs.hostLogs) void loadHostLogs()
+})
+
 async function loadHostLogs() {
-  if (!selectedHost.value) return
+  const id = selectedHost.value
+  if (!id) return
+  const token = ++hostRequest
   hostLoading.value = true
   try {
-    await logs.loadHost(selectedHost.value)
+    const text = await api.getHostLogs(id)
+    if (token === hostRequest) logs.hostLogs = text
+  } catch (error) {
+    if (token === hostRequest) app.notify(api.errorMessage(error), 'error')
   } finally {
-    hostLoading.value = false
+    if (token === hostRequest) hostLoading.value = false
   }
 }
 

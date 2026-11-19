@@ -1,5 +1,7 @@
 use base64::Engine as _;
 use serde_json::Value;
+use std::fs;
+use std::path::Path;
 use tauri::State;
 
 use crate::error::{AppError, AppResult};
@@ -135,13 +137,7 @@ pub fn list_theme_presets() -> Vec<ThemePreset> {
 
 #[tauri::command]
 pub async fn save_theme(state: State<'_, AppState>, theme: ThemeConfig) -> AppResult<ThemeConfig> {
-    let theme = validate_theme(&state, theme)?;
-    {
-        let mut config = state.config.lock().unwrap();
-        config.theme = theme.clone();
-    }
-    state.save()?;
-    Ok(theme)
+    apply_theme(&state, theme)
 }
 
 #[tauri::command]
@@ -150,10 +146,51 @@ pub fn export_theme(state: State<'_, AppState>) -> AppResult<String> {
 }
 
 #[tauri::command]
+pub fn export_theme_file(state: State<'_, AppState>, path: String) -> AppResult<()> {
+    let path = Path::new(&path);
+    if !path
+        .extension()
+        .and_then(|value| value.to_str())
+        .map(|value| value.eq_ignore_ascii_case("json"))
+        .unwrap_or(false)
+    {
+        return Err(AppError::theme("主题文件必须是 JSON 格式"));
+    }
+    let json = serde_json::to_string_pretty(&state.snapshot().theme)?;
+    fs::write(path, json)?;
+    Ok(())
+}
+
+#[tauri::command]
 pub async fn import_theme(state: State<'_, AppState>, json: String) -> AppResult<ThemeConfig> {
     let theme: ThemeConfig =
         serde_json::from_str(&json).map_err(|error| AppError::theme(format!("主题解析失败: {error}")))?;
-    let theme = validate_theme(&state, theme)?;
+    apply_theme(&state, theme)
+}
+
+#[tauri::command]
+pub async fn import_theme_file(state: State<'_, AppState>, path: String) -> AppResult<ThemeConfig> {
+    let path = Path::new(&path);
+    let extension = path
+        .extension()
+        .and_then(|value| value.to_str())
+        .unwrap_or_default()
+        .to_ascii_lowercase();
+    if extension != "json" {
+        return Err(AppError::theme("主题文件必须是 JSON 格式"));
+    }
+    let metadata = fs::metadata(path)?;
+    if metadata.len() > 1024 * 1024 {
+        return Err(AppError::theme("主题文件过大（最大 1 MB）"));
+    }
+    let json = fs::read_to_string(path)?;
+    let theme: ThemeConfig =
+        serde_json::from_str(&json).map_err(|error| AppError::theme(format!("主题解析失败: {error}")))?;
+    apply_theme(&state, theme)
+}
+
+fn apply_theme(state: &AppState, theme: ThemeConfig) -> AppResult<ThemeConfig> {
+    let theme = validate_theme(state, theme)?;
     {
         let mut config = state.config.lock().unwrap();
         config.theme = theme.clone();

@@ -287,7 +287,7 @@ impl SunshineClient {
         self.get_json("/api/csrf-token").await
     }
 
-    pub async fn probe(host: &Host) -> AppResult<TestHostResult> {
+    pub async fn probe(host: &Host, password: Option<&str>) -> AppResult<TestHostResult> {
         let started = Instant::now();
         let fingerprint = fetch_fingerprint(&host.address, host.port).await?;
         let client = Client::builder()
@@ -296,18 +296,19 @@ impl SunshineClient {
             .redirect(Policy::none())
             .timeout(Duration::from_secs(10))
             .build()?;
-        let response = client
-            .get(format!("https://{}:{}/api/config", host.address, host.port))
-            .header(
-                "Authorization",
-                format!(
-                    "Basic {}",
-                    base64::engine::general_purpose::STANDARD
-                        .encode(format!("{}:", host.username.clone().unwrap_or_default()))
-                ),
-            )
-            .send()
-            .await?;
+        let mut request = client.get(format!("https://{}:{}/api/config", host.address, host.port));
+        if let Some(username) = host.username.as_deref() {
+            let auth = format!(
+                "Basic {}",
+                base64::engine::general_purpose::STANDARD.encode(format!(
+                    "{}:{}",
+                    username,
+                    password.unwrap_or_default()
+                ))
+            );
+            request = request.header("Authorization", auth);
+        }
+        let response = request.send().await?;
         let status = response.status();
         let raw: Value = response.json().await.unwrap_or(Value::Null);
         let platform = raw
@@ -406,10 +407,13 @@ pub async fn fetch_fingerprint(host: &str, port: u16) -> AppResult<String> {
             .map_err(|error| AppError::network(format!("无效的主机名: {error}")))?,
     };
 
-    let _tls = connector
-        .connect(server_name, stream)
-        .await
-        .map_err(|error| AppError::network(format!("TLS 握手失败: {error}")))?;
+    let _tls = match timeout(Duration::from_secs(8), connector.connect(server_name, stream)).await {
+        Ok(Ok(stream)) => stream,
+        Ok(Err(error)) => {
+            return Err(AppError::network(format!("TLS 握手失败: {error}")));
+        }
+        Err(_) => return Err(AppError::new("networkTimeout", "TLS 握手超时")),
+    };
 
     let fingerprint = captured
         .lock()

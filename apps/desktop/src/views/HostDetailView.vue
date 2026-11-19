@@ -9,7 +9,7 @@
         <div class="page-subtitle mono">{{ host.address }}:{{ host.port }}</div>
       </div>
       <v-chip :color="host.paired ? 'success' : 'warning'" variant="tonal" size="small" class="ml-2">
-        {{ host.paired ? t('common.pair') : t('hosts.pairPin') }}
+        {{ host.paired ? t('hosts.paired') : t('hosts.unpaired') }}
       </v-chip>
       <v-spacer />
       <v-btn variant="tonal" prepend-icon="mdi-lan-connect" :loading="connecting" @click="connect">
@@ -71,10 +71,11 @@
     </div>
 
     <div v-show="tab === 'settings'">
+      <v-alert v-if="configError" type="error" variant="tonal" class="mb-4">{{ configError }}</v-alert>
       <div v-if="config">
         <ConfigEditor :config="config" :saving="configSaving" @save="saveConfig" />
       </div>
-      <v-card v-else class="glass pa-8 text-center" elevation="0">
+      <v-card v-else-if="!configError" class="glass pa-8 text-center" elevation="0">
         <v-progress-circular indeterminate color="primary" />
         <div class="muted mt-3">{{ t('common.loading') }}</div>
       </v-card>
@@ -93,7 +94,7 @@
               <v-list-item v-for="permission in permissions" :key="String(permission.id)">
                 <v-list-item-title>{{ permission.id }}</v-list-item-title>
                 <v-list-item-subtitle>
-                  {{ permission.required ? 'Required' : 'Optional' }} ·
+                  {{ permission.required ? t('hostDetail.required') : t('hostDetail.optional') }} ·
                   {{ permission.status }}
                 </v-list-item-subtitle>
                 <template #append>
@@ -114,10 +115,10 @@
         </v-col>
         <v-col cols="12" md="6">
           <v-card class="glass pa-5 h-100" elevation="0">
-            <div class="text-h6 mb-3">Virtual Input</div>
+            <div class="text-h6 mb-3">{{ t('hostDetail.virtualInput') }}</div>
             <pre class="mono text-caption json-box">{{ JSON.stringify(virtualInput, null, 2) }}</pre>
             <v-btn class="mt-3" variant="tonal" prepend-icon="mdi-monitor-screenshot" @click="resetDisplay">
-              Reset display persistence
+              {{ t('hostDetail.resetDisplay') }}
             </v-btn>
           </v-card>
         </v-col>
@@ -127,7 +128,7 @@
     <v-dialog v-model="restartDialog" max-width="420">
       <v-card class="glass pa-2">
         <v-card-title>{{ t('common.restart') }}</v-card-title>
-        <v-card-text>配置已保存。需要重启 Sunshine 才能生效，是否现在重启？</v-card-text>
+        <v-card-text>{{ t('hostDetail.restartToApply') }}</v-card-text>
         <v-card-actions class="px-4 pb-3">
           <v-spacer />
           <v-btn variant="text" @click="restartDialog = false">{{ t('common.cancel') }}</v-btn>
@@ -145,7 +146,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import * as api from '@/api'
@@ -171,18 +172,39 @@ const clients = ref<Record<string, unknown>[]>([])
 const clientsLoading = ref(false)
 const config = ref<Record<string, unknown> | null>(null)
 const configSaving = ref(false)
+const configError = ref('')
 const restartDialog = ref(false)
 const hostLogs = ref('')
 const logsLoading = ref(false)
 const permissions = ref<Record<string, unknown>[]>([])
 const virtualInput = ref<Record<string, unknown>>({})
 
-const host = computed(() => hosts.hosts.find((item) => item.id === props.id) ?? null)
+const host = computed(
+  () =>
+    hosts.hosts.find((item) => item.id === props.id) ??
+    app.config?.hosts.find((item) => item.id === props.id) ??
+    null,
+)
+let hostToken = 0
 
-onMounted(async () => {
-  await hosts.refresh()
-  void loadConfig()
-})
+watch(
+  () => props.id,
+  async () => {
+    const token = ++hostToken
+    tab.value = 'apps'
+    pairOpen.value = false
+    clients.value = []
+    config.value = null
+    configError.value = ''
+    hostLogs.value = ''
+    permissions.value = []
+    virtualInput.value = {}
+    await hosts.refresh()
+    if (token !== hostToken) return
+    void loadConfig(token)
+  },
+  { immediate: true },
+)
 
 watch(tab, (value) => {
   if (value === 'clients' && clients.value.length === 0) void loadClients()
@@ -222,15 +244,17 @@ async function closeApp() {
 }
 
 async function loadClients() {
+  const token = hostToken
   clientsLoading.value = true
   try {
     const raw = await api.getHostClients(props.id)
+    if (token !== hostToken) return
     const list = Array.isArray(raw) ? raw : ((raw as { clients?: unknown[] })?.clients ?? [])
     clients.value = list.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object')
   } catch (error) {
-    app.notify(api.errorMessage(error), 'error')
+    if (token === hostToken) app.notify(api.errorMessage(error), 'error')
   } finally {
-    clientsLoading.value = false
+    if (token === hostToken) clientsLoading.value = false
   }
 }
 
@@ -255,24 +279,30 @@ async function unpairAll() {
   }
 }
 
-async function loadConfig() {
+async function loadConfig(token = hostToken) {
+  configError.value = ''
   try {
-    config.value = await api.getHostConfig(props.id)
+    const value = await api.getHostConfig(props.id)
+    if (token === hostToken) config.value = value
   } catch (error) {
-    app.notify(api.errorMessage(error), 'error')
+    if (token === hostToken) configError.value = api.errorMessage(error)
   }
 }
 
 async function saveConfig(updated: Record<string, unknown>) {
+  const id = props.id
+  const token = hostToken
   configSaving.value = true
   try {
-    await api.saveHostConfig(props.id, updated)
+    const saved = await api.saveHostConfig(id, updated)
+    if (token !== hostToken) return
+    if (saved && typeof saved === 'object') config.value = saved as Record<string, unknown>
     app.notify(t('common.save'), 'success')
     restartDialog.value = true
   } catch (error) {
-    app.notify(api.errorMessage(error), 'error')
+    if (token === hostToken) app.notify(api.errorMessage(error), 'error')
   } finally {
-    configSaving.value = false
+    if (token === hostToken) configSaving.value = false
   }
 }
 
@@ -287,24 +317,34 @@ async function restart() {
 }
 
 async function loadLogs() {
+  const token = hostToken
   logsLoading.value = true
   try {
-    hostLogs.value = await api.getHostLogs(props.id)
+    const value = await api.getHostLogs(props.id)
+    if (token === hostToken) hostLogs.value = value
   } catch (error) {
-    app.notify(api.errorMessage(error), 'error')
+    if (token === hostToken) app.notify(api.errorMessage(error), 'error')
   } finally {
-    logsLoading.value = false
+    if (token === hostToken) logsLoading.value = false
   }
 }
 
 async function loadPermissions() {
+  const token = hostToken
   try {
     const raw = await api.getPermissions(props.id)
-    const list = Array.isArray(raw?.permissions) ? (raw.permissions as Record<string, unknown>[]) : []
+    if (token !== hostToken) return
+    const list = Array.isArray(raw)
+      ? (raw as Record<string, unknown>[])
+      : Array.isArray(raw?.permissions)
+        ? (raw.permissions as Record<string, unknown>[])
+        : []
+    const status = await api.getVirtualInputStatus(props.id)
+    if (token !== hostToken) return
     permissions.value = list
-    virtualInput.value = await api.getVirtualInputStatus(props.id)
+    virtualInput.value = status
   } catch (error) {
-    app.notify(api.errorMessage(error), 'error')
+    if (token === hostToken) app.notify(api.errorMessage(error), 'error')
   }
 }
 

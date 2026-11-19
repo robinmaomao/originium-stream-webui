@@ -381,6 +381,14 @@ impl SessionManager {
         tokio::spawn(async move {
             let status = child.wait().await;
             let mut guard = snapshot.lock().unwrap();
+            if guard.pid != pid {
+                crate::logging::push(
+                    "info",
+                    "moonlight",
+                    &format!("会话结束（host={host_id}，已由停止操作处理）"),
+                );
+                return;
+            }
             guard.pid = None;
             guard.state = match status {
                 Ok(status) if status.success() => SessionState::Idle,
@@ -407,7 +415,9 @@ impl SessionManager {
         let pid = {
             let mut snapshot = self.snapshot.lock().unwrap();
             snapshot.state = SessionState::Stopping;
-            snapshot.pid
+            let pid = snapshot.pid;
+            snapshot.pid = None;
+            pid
         };
 
         #[cfg(windows)]

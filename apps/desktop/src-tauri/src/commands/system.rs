@@ -68,16 +68,24 @@ pub fn get_autostart(app: AppHandle) -> AppResult<bool> {
 
 #[tauri::command]
 pub async fn set_global_hotkey(app: AppHandle, state: State<'_, AppState>, accelerator: String) -> AppResult<String> {
+    let accelerator = accelerator.trim().to_string();
     let shortcut = accelerator
         .parse::<tauri_plugin_global_shortcut::Shortcut>()
         .map_err(|error| AppError::config(format!("无效的快捷键: {error}")))?;
     let manager = app.global_shortcut();
+    let previous = state.snapshot().settings.global_hotkey;
+    if previous == accelerator {
+        return Ok(accelerator);
+    }
     manager
         .unregister_all()
         .map_err(|error| AppError::internal(error.to_string()))?;
-    manager
-        .register(shortcut)
-        .map_err(|error| AppError::internal(format!("快捷键注册失败: {error}")))?;
+    if let Err(error) = manager.register(shortcut) {
+        if let Ok(old) = previous.parse::<tauri_plugin_global_shortcut::Shortcut>() {
+            let _ = manager.register(old);
+        }
+        return Err(AppError::internal(format!("快捷键注册失败: {error}")));
+    }
     {
         let mut config = state.config.lock().unwrap();
         config.settings.global_hotkey = accelerator.clone();
@@ -182,6 +190,17 @@ pub async fn save_app_settings(
     state: State<'_, AppState>,
     settings: crate::models::AppSettings,
 ) -> AppResult<crate::models::AppSettings> {
+    if !matches!(settings.language.as_str(), "zh-CN" | "en") {
+        return Err(AppError::config("不支持的语言"));
+    }
+    if !settings.global_hotkey.trim().is_empty()
+        && settings
+            .global_hotkey
+            .parse::<tauri_plugin_global_shortcut::Shortcut>()
+            .is_err()
+    {
+        return Err(AppError::config("无效的快捷键"));
+    }
     {
         let mut config = state.config.lock().unwrap();
         config.settings = settings.clone();

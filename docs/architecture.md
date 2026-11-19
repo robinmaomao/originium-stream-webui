@@ -42,6 +42,11 @@ flowchart LR
 | `logging.rs` | In-memory ring buffer + rotating file log |
 | `theme` (frontend) | CSS variables, font registration, Vuetify theme sync |
 
+Sunshine advertises its GameStream HTTP port (default `47989`) over
+`_nvstream._tcp`. The HTTPS configuration API lives one port higher (`47990` by
+default), so `discovery.rs` maps the advertised port to the API port and
+`state.rs` migrates older mDNS entries that were saved with the GameStream port.
+
 ## Request lifecycle
 
 ```mermaid

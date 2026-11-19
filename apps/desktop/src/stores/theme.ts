@@ -157,8 +157,19 @@ export const useThemeStore = defineStore('theme', {
       await this.apply(theme)
       return theme
     },
+    async importThemeFile(path: string) {
+      const theme = await api.importThemeFile(path)
+      this.theme = theme
+      const app = useAppStore()
+      if (app.config) app.config.theme = theme
+      await this.apply(theme)
+      return theme
+    },
     async exportTheme() {
       return api.exportTheme()
+    },
+    async exportThemeFile(path: string) {
+      await api.exportThemeFile(path)
     },
     async importFont(path: string) {
       const relative = await api.importAsset('font', path)

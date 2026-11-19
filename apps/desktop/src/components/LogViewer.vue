@@ -64,12 +64,12 @@ defineEmits<{ refresh: []; clear: [] }>()
 const { t } = useI18n()
 const search = ref('')
 const level = ref('all')
-const levels = [
+const levels = computed(() => [
   { title: t('logs.all'), value: 'all' },
   { title: 'INFO', value: 'info' },
   { title: 'WARN', value: 'warn' },
   { title: 'ERROR', value: 'error' },
-]
+])
 
 const filteredEntries = computed(() => {
   const needle = search.value.trim().toLowerCase()

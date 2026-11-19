@@ -58,7 +58,7 @@ onMounted(async () => {
   } catch {
     await theme.apply(app.config.theme)
   }
-  i18n.global.locale.value = app.config.settings.language as 'zh-CN' | 'en'
+  i18n.global.locale.value = app.config.settings.language === 'en' ? 'en' : 'zh-CN'
   if (!app.config.onboardingComplete && route.path !== '/onboarding' && route.path !== '/hud') {
     await router.replace('/onboarding')
   } else if (app.config.onboardingComplete && route.path === '/') {
@@ -80,7 +80,7 @@ watch(
 watch(
   () => app.config?.settings.language,
   (value) => {
-    if (value) i18n.global.locale.value = value as 'zh-CN' | 'en'
+    if (value) i18n.global.locale.value = value === 'en' ? 'en' : 'zh-CN'
   },
 )
 </script>

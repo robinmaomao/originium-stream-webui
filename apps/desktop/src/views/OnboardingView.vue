@@ -108,7 +108,7 @@
               <div class="font-weight-medium">Moonlight</div>
               <v-spacer />
               <v-chip :color="environment?.moonlightInstalled ? 'success' : 'warning'" variant="tonal" size="small">
-                {{ environment?.moonlightVersion ?? t('settings.notInstalled') }}
+                {{ environment?.moonlightInstalled ? environment?.moonlightVersion ?? t('settings.installed') : t('settings.notInstalled') }}
               </v-chip>
               <v-btn
                 v-if="!environment?.moonlightInstalled"
@@ -158,7 +158,7 @@
       </div>
 
       <div class="d-flex align-center ga-3 mt-6">
-        <v-btn variant="text" :disabled="step === 0" @click="step--">{{ t('common.cancel') }}</v-btn>
+        <v-btn variant="text" :disabled="step === 0" @click="step--">{{ t('common.back') }}</v-btn>
         <v-spacer />
         <v-btn v-if="step < 4" color="primary" @click="step++">{{ t('common.confirm') }}</v-btn>
         <v-btn v-else color="primary" :loading="finishing" @click="finish">{{ t('onboarding.finish') }}</v-btn>
@@ -196,6 +196,7 @@ const environment = computed(() => app.environment)
 
 onMounted(async () => {
   await app.refreshEnvironment()
+  await hosts.refresh()
 })
 
 async function install(id: string) {
@@ -217,16 +218,16 @@ async function install(id: string) {
 
 async function saveCredentials() {
   if (!credentials.username.trim() || !credentials.password) {
-    hostError.value = '用户名与密码不能为空'
+    hostError.value = t('local.credentialsError')
     return
   }
   savingCredentials.value = true
   hostError.value = ''
   try {
     await api.setSunshineCredentials(credentials.username.trim(), credentials.password)
-    const existing = hosts.hosts.find(
-      (host) => host.address === '127.0.0.1' || host.address === 'localhost',
-    )
+    const known = new Set(['127.0.0.1', 'localhost', environment.value?.hostname ?? ''])
+    for (const ip of environment.value?.lanIps ?? []) known.add(ip)
+    const existing = hosts.hosts.find((host) => known.has(host.address) || known.has(host.name))
     if (!existing) {
       await hosts.add({
         name: environment.value?.hostname ?? 'This PC',
@@ -248,6 +249,7 @@ async function saveCredentials() {
       })
     }
     app.notify(t('onboarding.hostAdded'), 'success')
+    credentials.password = ''
   } catch (error) {
     hostError.value = api.errorMessage(error)
   } finally {
@@ -286,6 +288,8 @@ async function finish() {
   try {
     await app.completeOnboarding()
     await router.replace('/local')
+  } catch (error) {
+    app.notify(api.errorMessage(error), 'error')
   } finally {
     finishing.value = false
   }

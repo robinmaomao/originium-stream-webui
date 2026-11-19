@@ -67,6 +67,7 @@ const covers = reactive<Record<number, string>>({})
 const loading = ref(false)
 const error = ref('')
 const search = ref('')
+let requestId = 0
 
 const filtered = computed(() => {
   const needle = search.value.trim().toLowerCase()
@@ -81,6 +82,10 @@ watch(
   },
   { immediate: true },
 )
+
+function clearCovers() {
+  for (const key of Object.keys(covers)) delete covers[Number(key)]
+}
 
 function normalize(raw: unknown): AppEntry[] {
   const list = Array.isArray(raw)
@@ -98,24 +103,29 @@ function normalize(raw: unknown): AppEntry[] {
 }
 
 async function load() {
+  const current = ++requestId
   loading.value = true
   error.value = ''
+  apps.value = []
+  clearCovers()
   try {
-    apps.value = normalize(await api.getHostApps(props.hostId))
+    const result = normalize(await api.getHostApps(props.hostId))
+    if (current !== requestId) return
+    apps.value = result
     await Promise.allSettled(
-      apps.value.map(async (app) => {
-        if (covers[app.index]) return
+      result.map(async (app) => {
         try {
-          covers[app.index] = await api.getCover(props.hostId, app.index)
+          const cover = await api.getCover(props.hostId, app.index)
+          if (current === requestId) covers[app.index] = cover
         } catch {
           // cover is optional
         }
       }),
     )
   } catch (err) {
-    error.value = api.errorMessage(err)
+    if (current === requestId) error.value = api.errorMessage(err)
   } finally {
-    loading.value = false
+    if (current === requestId) loading.value = false
   }
 }
 </script>

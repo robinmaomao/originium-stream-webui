@@ -67,38 +67,38 @@ import type { StreamProfile } from '@/api/types'
 const model = defineModel<StreamProfile>({ required: true })
 const { t } = useI18n()
 
-const codecs = [
+const codecs = computed(() => [
   { title: t('profile.auto'), value: 'auto' },
   { title: 'H.264', value: 'H.264' },
   { title: 'HEVC', value: 'HEVC' },
   { title: 'AV1', value: 'AV1' },
-]
-const audioOptions = [
+])
+const audioOptions = computed(() => [
   { title: t('profile.stereo'), value: 'stereo' },
   { title: t('profile.surround51'), value: '5.1-surround' },
   { title: t('profile.surround71'), value: '7.1-surround' },
-]
-const displayOptions = [
+])
+const displayOptions = computed(() => [
   { title: t('profile.borderless'), value: 'borderless' },
   { title: t('profile.fullscreen'), value: 'fullscreen' },
   { title: t('profile.windowed'), value: 'windowed' },
-]
-const captureOptions = [
+])
+const captureOptions = computed(() => [
   { title: t('profile.never'), value: 'never' },
   { title: t('profile.fullscreen'), value: 'fullscreen' },
   { title: t('profile.always'), value: 'always' },
-]
-const resolutionOptions = [
+])
+const resolutionOptions = computed(() => [
   { title: '1280 × 720', value: '1280x720' },
   { title: '1920 × 1080', value: '1920x1080' },
   { title: '2560 × 1440', value: '2560x1440' },
   { title: '3840 × 2160', value: '3840x2160' },
   { title: t('profile.width') + ' × ' + t('profile.height'), value: 'custom' },
-]
+])
 
 const resolutionPreset = computed(() => {
   const key = `${model.value.width}x${model.value.height}`
-  return resolutionOptions.some((option) => option.value === key) ? key : 'custom'
+  return resolutionOptions.value.some((option) => option.value === key) ? key : 'custom'
 })
 
 const packetSize = computed({

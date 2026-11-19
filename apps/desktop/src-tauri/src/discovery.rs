@@ -27,6 +27,7 @@ fn scan_blocking(timeout: Duration) -> AppResult<Vec<DiscoveredHost>> {
         match receiver.recv_timeout(remaining) {
             Ok(ServiceEvent::ServiceResolved(info)) => {
                 let port = info.get_port();
+                let api_port = port.checked_add(1).unwrap_or(port);
                 let hostname = info
                     .get_hostname()
                     .trim_end_matches('.')
@@ -42,11 +43,11 @@ fn scan_blocking(timeout: Duration) -> AppResult<Vec<DiscoveredHost>> {
                     if !address.is_ipv4() {
                         continue;
                     }
-                    let key = format!("{address}:{port}");
+                    let key = format!("{address}:{api_port}");
                     hosts.entry(key).or_insert(DiscoveredHost {
                         name: display.clone(),
                         address: address.to_string(),
-                        port,
+                        port: api_port,
                         source: HostSource::Mdns,
                     });
                 }

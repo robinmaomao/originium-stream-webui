@@ -10,7 +10,7 @@
         style="max-width: 320px"
       />
       <v-spacer />
-      <v-btn variant="tonal" prepend-icon="mdi-code-json" @click="rawDialog = true">
+      <v-btn variant="tonal" prepend-icon="mdi-code-json" @click="openRaw">
         JSON
       </v-btn>
       <v-btn color="primary" prepend-icon="mdi-content-save" :loading="saving" @click="save">
@@ -31,23 +31,23 @@
             :md="fieldSpan(key)"
           >
             <v-switch
-              v-if="typeof config[key] === 'boolean'"
-              :model-value="Boolean(config[key])"
+              v-if="typeof model[key] === 'boolean'"
+              :model-value="Boolean(model[key])"
               :label="key"
               hide-details
               @update:model-value="setValue(key, $event)"
             />
             <v-text-field
-              v-else-if="typeof config[key] === 'number'"
-              :model-value="Number(config[key])"
+              v-else-if="typeof model[key] === 'number'"
+              :model-value="Number(model[key])"
               type="number"
               :label="key"
               hide-details
               @update:model-value="setValue(key, Number($event))"
             />
             <v-text-field
-              v-else-if="isSimple(config[key])"
-              :model-value="String(config[key] ?? '')"
+              v-else-if="isSimple(model[key])"
+              :model-value="String(model[key] ?? '')"
               :label="key"
               hide-details
               @update:model-value="setValue(key, $event)"
@@ -94,7 +94,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { AppError } from '@/api/types'
 
 const props = defineProps<{
   config: Record<string, unknown>
@@ -109,25 +108,26 @@ const rawDialog = ref(false)
 const rawText = ref('')
 const rawError = ref('')
 const complexValues = reactive<Record<string, string>>({})
+const model = reactive<Record<string, unknown>>({})
 
 const metaKeys = new Set(['platform', 'version', 'status', 'configVersion'])
 
-const groups = [
-  { id: 'audio', title: '音频 / Audio', pattern: /audio|sink|mic|sound/i },
-  { id: 'video', title: '视频 / Video', pattern: /video|encoder|codec|fps|pixfmt|hdr|av1|hevc|nvenc|amf|vaapi|vt_|capture|display/i },
-  { id: 'network', title: '网络 / Network', pattern: /port|address|bind|upnp|external|origin|csrf|wan|lan|dns|ipv/i },
-  { id: 'input', title: '输入 / Input', pattern: /input|mouse|keyboard|gamepad|controller|x360|ds4|ds5|switch|motion|pen|touch/i },
-  { id: 'stream', title: '串流 / Streaming', pattern: /stream|bitrate|fec|packet|ping|encryption|dscp|apps|prep|cmd|quality/i },
-  { id: 'advanced', title: '高级 / Advanced', pattern: /.*/ },
-]
+const groups = computed(() => [
+  { id: 'audio', title: t('hostDetail.configSections.audio'), pattern: /audio|sink|mic|sound/i },
+  { id: 'video', title: t('hostDetail.configSections.video'), pattern: /video|encoder|codec|fps|pixfmt|hdr|av1|hevc|nvenc|amf|vaapi|vt_|capture|display/i },
+  { id: 'network', title: t('hostDetail.configSections.network'), pattern: /port|address|bind|upnp|external|origin|csrf|wan|lan|dns|ipv/i },
+  { id: 'input', title: t('hostDetail.configSections.input'), pattern: /input|mouse|keyboard|gamepad|controller|x360|ds4|ds5|switch|motion|pen|touch/i },
+  { id: 'stream', title: t('hostDetail.configSections.stream'), pattern: /stream|bitrate|fec|packet|ping|encryption|dscp|apps|prep|cmd|quality/i },
+  { id: 'advanced', title: t('hostDetail.configSections.advanced'), pattern: /.*/ },
+])
 
-const keys = computed(() => Object.keys(props.config).filter((key) => !metaKeys.has(key)))
+const keys = computed(() => Object.keys(model).filter((key) => !metaKeys.has(key)))
 
 const visibleSections = computed(() => {
   const needle = search.value.trim().toLowerCase()
   const filtered = keys.value.filter((key) => !needle || key.toLowerCase().includes(needle))
   const seen = new Set<string>()
-  const sections = groups
+  const sections = groups.value
     .map((group) => {
       const sectionKeys = filtered.filter((key) => {
         if (seen.has(key)) return false
@@ -141,14 +141,20 @@ const visibleSections = computed(() => {
   return sections
 })
 
+function syncComplex() {
+  for (const key of Object.keys(complexValues)) delete complexValues[key]
+  for (const [key, value] of Object.entries(model)) {
+    if (!isSimple(value)) complexValues[key] = JSON.stringify(value)
+  }
+  rawText.value = JSON.stringify(model, null, 2)
+}
+
 watch(
   () => props.config,
   (config) => {
-    rawText.value = JSON.stringify(config, null, 2)
-    for (const key of Object.keys(complexValues)) delete complexValues[key]
-    for (const [key, value] of Object.entries(config)) {
-      if (!isSimple(value)) complexValues[key] = JSON.stringify(value)
-    }
+    for (const key of Object.keys(model)) delete model[key]
+    Object.assign(model, JSON.parse(JSON.stringify(config)) as Record<string, unknown>)
+    syncComplex()
   },
   { immediate: true, deep: false },
 )
@@ -162,28 +168,40 @@ function fieldSpan(key: string) {
 }
 
 function setValue(key: string, value: unknown) {
-  props.config[key] = value
-  rawText.value = JSON.stringify(props.config, null, 2)
+  model[key] = value
+  if (isSimple(value)) delete complexValues[key]
+  rawText.value = JSON.stringify(model, null, 2)
 }
 
 function applyComplex(key: string) {
   try {
     const parsed = JSON.parse(complexValues[key] || 'null')
-    props.config[key] = parsed
-    rawText.value = JSON.stringify(props.config, null, 2)
+    model[key] = parsed
+    rawText.value = JSON.stringify(model, null, 2)
     error.value = ''
+    return true
   } catch (err) {
-    error.value = `解析 ${key} 失败: ${(err as AppError).message ?? err}`
+    error.value = t('hostDetail.invalidJson', { key, error: (err as Error).message })
+    return false
   }
 }
 
-function applyRaw() {
-  try {
-    const parsed = JSON.parse(rawText.value) as Record<string, unknown>
-    for (const key of Object.keys(props.config)) {
-      if (!(key in parsed)) delete props.config[key]
+function openRaw() {
+  rawText.value = JSON.stringify(model, null, 2)
+  rawError.value = ''
+  rawDialog.value = true
+}
+
+function applyRaw() {  try {
+    const parsed = JSON.parse(rawText.value) as unknown
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new Error(t('hostDetail.invalidConfig'))
     }
-    Object.assign(props.config, parsed)
+    for (const key of Object.keys(model)) {
+      if (!(key in (parsed as Record<string, unknown>))) delete model[key]
+    }
+    Object.assign(model, parsed)
+    syncComplex()
     rawError.value = ''
     rawDialog.value = false
   } catch (err) {
@@ -193,8 +211,8 @@ function applyRaw() {
 
 function save() {
   for (const key of Object.keys(complexValues)) {
-    applyComplex(key)
+    if (!applyComplex(key)) return
   }
-  emit('save', props.config)
+  emit('save', JSON.parse(JSON.stringify(model)) as Record<string, unknown>)
 }
 </script>

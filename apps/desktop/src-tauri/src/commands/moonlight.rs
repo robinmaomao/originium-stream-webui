@@ -55,7 +55,15 @@ pub async fn launch_session(
         .ok_or_else(|| AppError::component("未找到 moonlight 可执行文件"))?;
     let profile = profile.unwrap_or(config.settings.default_profile);
     let control_enabled = crate::components::installed(&state.store, crate::components::MOONLIGHT_ID)
-        .map(|component| component.capabilities.iter().any(|value| value == "control-pipe"))
+        .map(|component| {
+            let installed_exe = std::path::Path::new(&component.path).join(&component.entry);
+            let same_binary = std::fs::canonicalize(&installed_exe)
+                .ok()
+                .zip(std::fs::canonicalize(&exe).ok())
+                .map(|(installed, selected)| installed == selected)
+                .unwrap_or(false);
+            same_binary && component.capabilities.iter().any(|value| value == "control-pipe")
+        })
         .unwrap_or(false);
     let mut session = state.session.lock().await;
     session.launch(&exe, &host, &app_name, &profile, control_enabled).await

@@ -49,14 +49,26 @@ pub fn run() {
 
             let state = AppState::new(store)?;
             let hotkey = state.snapshot().settings.global_hotkey.clone();
+            let start_minimized = state.snapshot().settings.start_minimized;
             app.manage(state);
 
             if let Err(error) = fit_main_window(app) {
                 logging::push("warn", "app", &format!("无法适配主窗口尺寸: {error}"));
             }
             setup_tray(app)?;
+            if start_minimized {
+                let handle = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+                    if let Some(window) = handle.get_webview_window("main") {
+                        let _ = window.hide();
+                    }
+                });
+            }
             if let Ok(shortcut) = hotkey.parse::<tauri_plugin_global_shortcut::Shortcut>() {
-                let _ = app.global_shortcut().register(shortcut);
+                if let Err(error) = app.global_shortcut().register(shortcut) {
+                    logging::push("warn", "app", &format!("全局热键注册失败: {error}"));
+                }
             }
 
             Ok(())
@@ -137,6 +149,7 @@ pub fn run() {
             commands::components::start_sunshine_service,
             commands::components::stop_sunshine_service,
             commands::components::install_sunshine_service,
+            commands::components::uninstall_sunshine_service,
             commands::components::add_firewall_rules,
             commands::components::set_sunshine_credentials,
             commands::components::detect_components,
@@ -154,7 +167,9 @@ pub fn run() {
             commands::theme::list_theme_presets,
             commands::theme::save_theme,
             commands::theme::export_theme,
+            commands::theme::export_theme_file,
             commands::theme::import_theme,
+            commands::theme::import_theme_file,
             commands::theme::import_asset,
             commands::theme::list_assets,
             commands::theme::get_asset_data_url,
@@ -204,8 +219,20 @@ fn fit_main_window(app: &tauri::App) -> tauri::Result<()> {
 }
 
 fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
-    let show = MenuItem::with_id(app, "show", "显示主窗口", true, None::<&str>)?;
-    let quit = MenuItem::with_id(app, "quit", "退出 Originium Stream", true, None::<&str>)?;
+    let english = app
+        .state::<AppState>()
+        .snapshot()
+        .settings
+        .language
+        .eq_ignore_ascii_case("en");
+    let show_label = if english { "Show main window" } else { "显示主窗口" };
+    let quit_label = if english {
+        "Quit Originium Stream"
+    } else {
+        "退出 Originium Stream"
+    };
+    let show = MenuItem::with_id(app, "show", show_label, true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", quit_label, true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&show, &quit])?;
 
     let mut builder = TrayIconBuilder::with_id("main-tray")

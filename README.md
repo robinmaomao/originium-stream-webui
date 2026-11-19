@@ -28,12 +28,13 @@ All Sunshine and Moonlight settings live in the same UI, including a fully custo
 - **Dual-stack runtime** — local Sunshine service/process supervision plus on-demand Moonlight sessions, both from one window.
 - **Display-aware shell** — the window fits the current monitor work area across Windows DPI scales, with a responsive icon rail on narrow screens and hidden scrollbars that preserve wheel/touch scrolling.
 - **Startup service** — optionally starts the Sunshine service when the app launches; Moonlight remains on-demand and no resident Moonlight process is created.
-- **Component manager** — portable Sunshine and Moonlight bundles are downloaded, SHA-256 verified, extracted, versioned and rolled back automatically. Local overrides are supported for development.
-- **LAN discovery & automated pairing** — `mdns-sd` browse + `moonlight pair --pin` + Sunshine `/api/pin` approval, no manual PIN typing on the client.
+- **Component manager** — portable Sunshine and Moonlight bundles are downloaded, SHA-256 verified, extracted, versioned and rolled back automatically. Local overrides are validated by executable name; updates and removal are blocked while the matching service/session is active, and the Sunshine service can be uninstalled from the UI.
+- **LAN discovery & automated pairing** — `mdns-sd` browse + `moonlight pair --pin` + Sunshine `/api/pin` approval, no manual PIN typing on the client. Discovered GameStream ports are mapped to Sunshine's HTTPS API port automatically.
+- **Host management** — trimmed input validation, duplicate address/port rejection, credential preservation on edit, and automatic certificate-trust reset when a host address changes.
 - **Complete settings coverage**
   - Sunshine: dynamic forms for every `/api/config` key (audio, video, network, input, applications, clients, advanced, troubleshooting).
   - Moonlight: full portable INI read/write plus a typed stream profile mapped to CLI flags.
-- **Theme engine** — color tokens, typography (custom Woff2/TTF/OTF), background images (opacity/blur/fill), dark/light presets, JSON import/export, reduced-motion and contrast-aware.
+- **Theme engine** — color tokens, typography (custom Woff2/TTF/OTF), background images (opacity/blur/fill), dark/light presets, file-based JSON import/export, reduced-motion and contrast-aware.
 - **Fused title bar** — draggable custom title bar with window controls, integrated session/theme actions, and optional native acrylic translucency with a CSS fallback.
 - **Session HUD** — always-on-top compact overlay, global hotkey (`CommandOrControl+Alt+Shift+O`).
 - **Observability** — structured logs, host logs, diagnostics bundle export, no telemetry.

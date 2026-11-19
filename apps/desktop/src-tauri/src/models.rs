@@ -57,7 +57,7 @@ pub struct HostInput {
 
 /// Streaming profile mapped onto moonlight CLI flags.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", default)]
 pub struct StreamProfile {
     pub width: u32,
     pub height: u32,
@@ -109,7 +109,7 @@ fn default_true() -> bool {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", default)]
 pub struct AppSettings {
     pub language: String,
     pub autostart: bool,
@@ -475,5 +475,18 @@ mod tests {
             .remove("autoStartServices");
         let settings: AppSettings = serde_json::from_value(value).expect("deserialize settings");
         assert!(settings.auto_start_services);
+    }
+
+    #[test]
+    fn app_settings_missing_new_fields_fall_back_to_defaults() {
+        let mut value = serde_json::to_value(AppSettings::default()).expect("serialize settings");
+        let object = value.as_object_mut().expect("settings object");
+        object.remove("startMinimized");
+        object.remove("defaultProfile");
+        object.remove("globalHotkey");
+        let settings: AppSettings = serde_json::from_value(value).expect("deserialize settings");
+        assert!(!settings.start_minimized);
+        assert_eq!(settings.default_profile.fps, 60);
+        assert_eq!(settings.global_hotkey, "CommandOrControl+Alt+Shift+O");
     }
 }

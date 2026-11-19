@@ -25,7 +25,7 @@
                 v-model="form.password"
                 type="password"
                 :label="t('local.password')"
-                :hint="host ? '留空表示保持原密码' : ''"
+                :hint="host ? t('hosts.passwordKeep') : ''"
                 autocomplete="current-password"
               />
             </v-col>
@@ -38,8 +38,10 @@
             density="comfortable"
             class="mt-2"
           >
-            {{ testResult.ok ? t('hosts.testSuccess') : t('hosts.pairFailed') }} ·
-            {{ testResult.platform }} · {{ testResult.version }} · {{ testResult.latencyMs }} ms
+            {{ testResult.ok ? t('hosts.testSuccess') : t('hosts.testFailed') }}
+            <template v-if="testResult.ok">
+              · {{ testResult.platform }} · {{ testResult.version }} · {{ testResult.latencyMs }} ms
+            </template>
           </v-alert>
 
           <v-alert v-if="error" type="error" variant="tonal" density="comfortable" class="mt-2">
@@ -103,15 +105,16 @@ watch(
 )
 
 function required(value: unknown) {
-  return Boolean(String(value ?? '').trim()) || '必填'
+  return Boolean(String(value ?? '').trim()) || t('hosts.required')
 }
 
 function payload() {
+  const port = Number(form.port)
   return {
     id: props.host?.id,
     name: form.name.trim(),
     address: form.address.trim(),
-    port: Number(form.port) || 47990,
+    port: Number.isFinite(port) ? port : 0,
     username: form.username.trim() || undefined,
     password: form.password || undefined,
     source: props.host?.source ?? ('manual' as const),
@@ -121,6 +124,7 @@ function payload() {
 async function test() {
   testing.value = true
   error.value = ''
+  testResult.value = null
   try {
     testResult.value = await api.testHost(payload())
   } catch (err) {
@@ -132,7 +136,11 @@ async function test() {
 
 async function save() {
   if (!form.name.trim() || !form.address.trim()) {
-    error.value = '名称与地址不能为空'
+    error.value = t('hosts.requiredFields')
+    return
+  }
+  if (!Number.isInteger(Number(form.port)) || Number(form.port) < 1 || Number(form.port) > 65535) {
+    error.value = t('hosts.invalidPort')
     return
   }
   saving.value = true

@@ -106,6 +106,16 @@
             >
               {{ t('common.stop') }}
             </v-btn>
+            <v-btn
+              v-if="service?.found"
+              variant="text"
+              color="error"
+              prepend-icon="mdi-delete-outline"
+              :loading="installing === 'uninstall-service'"
+              @click="uninstallService"
+            >
+              {{ t('local.uninstallService') }}
+            </v-btn>
             <v-btn variant="tonal" prepend-icon="mdi-firewall" :loading="installing === 'firewall'" @click="addFirewall">
               {{ t('local.addFirewall') }}
             </v-btn>
@@ -169,14 +179,14 @@
               :key="ip"
               variant="tonal"
               class="mono"
-              @click="copy(ip)"
+              @click="copy(lanUrl(ip))"
             >
-              https://{{ ip }}:47990
+              {{ lanUrl(ip) }}
             </v-chip>
             <span v-if="!environment?.lanIps?.length" class="muted">{{ t('common.none') }}</span>
           </div>
           <div class="text-caption muted mt-3">
-            其他设备可在「主机」页通过 mDNS 自动发现本机。
+            {{ t('local.discoveryHint') }}
           </div>
         </v-card>
       </v-col>
@@ -187,7 +197,7 @@
             <v-icon color="secondary" size="28" icon="mdi-key-chain" />
             <div>
               <div class="text-h6">{{ t('local.pending') }}</div>
-              <div class="text-caption muted">{{ localHost?.name ?? t('local.credentials') }}</div>
+              <div class="text-caption muted">{{ localHost?.name ?? t('local.notConfigured') }}</div>
             </div>
             <v-spacer />
             <v-btn icon variant="text" :loading="pairingLoading" @click="loadPairings">
@@ -196,7 +206,7 @@
           </div>
 
           <v-alert v-if="!localHost" type="info" variant="tonal" density="comfortable">
-            请先设置 Sunshine 账号并将本机添加为主机
+            {{ t('local.credentialsRequired') }}
           </v-alert>
           <v-alert v-else-if="pairings.length === 0" type="info" variant="tonal" density="comfortable">
             {{ t('local.noPending') }}
@@ -288,12 +298,21 @@ const approving = ref<PendingPairing | null>(null)
 const approvingBusy = ref(false)
 const approveError = ref('')
 const pin = ref('')
+let sessionPolling = false
 
 let pollTimer: number | null = null
 let sessionTimer: number | null = null
 
 const environment = computed(() => app.environment)
-const localHost = computed(() => hosts.localHost)
+const localHost = computed(() => {
+  const known = new Set(['127.0.0.1', 'localhost', environment.value?.hostname ?? ''])
+  for (const ip of environment.value?.lanIps ?? []) known.add(ip)
+  return (
+    hosts.localHost ??
+    hosts.hosts.find((host) => known.has(host.address) || known.has(host.name)) ??
+    null
+  )
+})
 const sunshineInstalled = computed(() => Boolean(environment.value?.sunshineInstalled))
 const moonlightInstalled = computed(() => Boolean(environment.value?.moonlightInstalled))
 const sunshineComponent = computed(() =>
@@ -314,8 +333,17 @@ const moonlightVersion = computed(
 const serviceRunning = computed(() => service.value?.state?.toLowerCase() === 'running')
 const serviceLabel = computed(() => {
   if (!service.value?.found) return t('local.serviceMissing')
-  return serviceRunning.value ? t('local.serviceRunning') : service.value.state ?? t('local.serviceStopped')
+  const state = service.value.state?.trim().toLowerCase() ?? ''
+  if (state === 'running') return t('local.serviceRunning')
+  if (state === 'stopped') return t('local.serviceStopped')
+  if (state === 'start pending' || state === 'starting') return t('local.serviceStarting')
+  if (state === 'stop pending' || state === 'stopping') return t('local.serviceStopping')
+  return service.value.state ?? t('local.serviceStopped')
 })
+
+function lanUrl(ip: string) {
+  return `https://${ip}:${localHost.value?.port ?? 47990}`
+}
 
 onMounted(async () => {
   await refresh()
@@ -339,10 +367,14 @@ async function pollLocalSession() {
     localSession.value = null
     return
   }
+  if (sessionPolling) return
+  sessionPolling = true
   try {
     localSession.value = await api.getSessionStatus(localHost.value.id)
   } catch {
     localSession.value = null
+  } finally {
+    sessionPolling = false
   }
 }
 
@@ -379,7 +411,22 @@ async function installService() {
   installing.value = 'service'
   try {
     service.value = await api.installSunshineService()
+    await app.refreshEnvironment()
     app.notify(t('local.installService'), 'success')
+  } catch (error) {
+    app.notify(api.errorMessage(error), 'error')
+  } finally {
+    installing.value = ''
+  }
+}
+
+async function uninstallService() {
+  if (!window.confirm(t('local.uninstallServiceConfirm'))) return
+  installing.value = 'uninstall-service'
+  try {
+    service.value = await api.uninstallSunshineService()
+    await app.refreshEnvironment()
+    app.notify(t('local.serviceUninstalled'), 'success')
   } catch (error) {
     app.notify(api.errorMessage(error), 'error')
   } finally {
@@ -391,6 +438,7 @@ async function startService() {
   serviceBusy.value = true
   try {
     service.value = await api.startSunshineService()
+    await app.refreshEnvironment()
   } catch (error) {
     app.notify(api.errorMessage(error), 'error')
   } finally {
@@ -402,6 +450,7 @@ async function stopService() {
   serviceBusy.value = true
   try {
     service.value = await api.stopSunshineService()
+    await app.refreshEnvironment()
   } catch (error) {
     app.notify(api.errorMessage(error), 'error')
   } finally {
@@ -422,7 +471,7 @@ async function addFirewall() {
 }
 
 async function loadPairings() {
-  if (!localHost.value) return
+  if (!localHost.value || pairingLoading.value) return
   pairingLoading.value = true
   try {
     pairings.value = await api.getPendingPairings(localHost.value.id)
@@ -468,7 +517,7 @@ async function approve() {
 
 async function saveCredentials() {
   if (!credentials.username.trim() || !credentials.password) {
-    credentialError.value = '用户名与密码不能为空'
+    credentialError.value = t('local.credentialsError')
     return
   }
   savingCredentials.value = true
@@ -501,8 +550,8 @@ async function copy(text: string) {
   try {
     await navigator.clipboard.writeText(text)
     app.notify(t('common.copied'), 'success')
-  } catch {
-    // clipboard may be unavailable
+  } catch (error) {
+    app.notify(api.errorMessage(error), 'error')
   }
 }
 </script>

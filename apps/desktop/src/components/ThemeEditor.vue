@@ -171,7 +171,7 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { open } from '@tauri-apps/plugin-dialog'
+import { open, save } from '@tauri-apps/plugin-dialog'
 import type { ThemeColors, ThemeConfig, ThemePreset } from '@/api/types'
 import { useThemeStore } from '@/stores/theme'
 import { useAppStore } from '@/stores/app'
@@ -184,23 +184,23 @@ const { t } = useI18n()
 const themeStore = useThemeStore()
 const app = useAppStore()
 
-const colorFields: { key: keyof ThemeColors; label: string }[] = [
-  { key: 'primary', label: 'Primary' },
-  { key: 'secondary', label: 'Secondary' },
-  { key: 'surface', label: 'Surface' },
-  { key: 'background', label: 'Background' },
-  { key: 'error', label: 'Error' },
-  { key: 'success', label: 'Success' },
-  { key: 'info', label: 'Info' },
-  { key: 'warning', label: 'Warning' },
-]
+const colorFields = computed<{ key: keyof ThemeColors; label: string }[]>(() => [
+  { key: 'primary', label: t('theme.colorNames.primary') },
+  { key: 'secondary', label: t('theme.colorNames.secondary') },
+  { key: 'surface', label: t('theme.colorNames.surface') },
+  { key: 'background', label: t('theme.colorNames.background') },
+  { key: 'error', label: t('theme.colorNames.error') },
+  { key: 'success', label: t('theme.colorNames.success') },
+  { key: 'info', label: t('theme.colorNames.info') },
+  { key: 'warning', label: t('theme.colorNames.warning') },
+])
 
-const backgroundModes = [
-  { title: 'Cover', value: 'cover' },
-  { title: 'Contain', value: 'contain' },
-  { title: 'Tile', value: 'tile' },
-  { title: 'Center', value: 'center' },
-]
+const backgroundModes = computed(() => [
+  { title: t('theme.fillModes.cover'), value: 'cover' },
+  { title: t('theme.fillModes.contain'), value: 'contain' },
+  { title: t('theme.fillModes.tile'), value: 'tile' },
+  { title: t('theme.fillModes.center'), value: 'center' },
+])
 
 const backgroundItems = computed(() => [
   { title: t('common.none'), value: '' },
@@ -228,10 +228,11 @@ function setColorValue(key: keyof ThemeColors, value: string) {
 }
 
 function applyPreset(preset: ThemePreset) {
+  const presetTheme = JSON.parse(JSON.stringify(preset.theme)) as ThemeConfig
   model.value = {
-    ...preset.theme,
-    background: { ...preset.theme.background, image: model.value.background.image ?? null },
-    name: preset.theme.name,
+    ...presetTheme,
+    background: { ...presetTheme.background, image: model.value.background.image ?? null },
+    name: presetTheme.name,
   }
 }
 
@@ -277,20 +278,28 @@ function setBackground(value: string | null) {
 }
 
 async function exportTheme() {
-  const json = await themeStore.exportTheme()
-  const blob = new Blob([json], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const anchor = document.createElement('a')
-  anchor.href = url
-  anchor.download = `${model.value.name || 'originium-theme'}.json`
-  anchor.click()
-  URL.revokeObjectURL(url)
+  const path = await save({
+    defaultPath: `${model.value.name || 'originium-theme'}.json`,
+    filters: [{ name: 'Theme JSON', extensions: ['json'] }],
+  })
+  if (typeof path !== 'string') return
+  const target = path.toLowerCase().endsWith('.json') ? path : `${path}.json`
+  try {
+    await themeStore.exportThemeFile(target)
+    app.notify(t('theme.exported'), 'success')
+  } catch (error) {
+    app.notify(api.errorMessage(error), 'error')
+  }
 }
 
 async function importTheme() {
+  const path = await open({
+    multiple: false,
+    filters: [{ name: 'Theme JSON', extensions: ['json'] }],
+  })
+  if (typeof path !== 'string') return
   try {
-    const text = await navigator.clipboard.readText()
-    const theme = await themeStore.importTheme(text)
+    const theme = await themeStore.importThemeFile(path)
     model.value = theme
     app.notify(t('theme.applied'), 'success')
   } catch (error) {

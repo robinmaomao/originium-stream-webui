@@ -20,6 +20,18 @@ impl AppState {
         if let Some(theme) = store.load_theme() {
             config.theme = theme;
         }
+        let mut migrated = false;
+        for host in &mut config.hosts {
+            if host.source == crate::models::HostSource::Mdns && host.port == 47989 {
+                host.port = 47990;
+                migrated = true;
+            }
+        }
+        if migrated {
+            if let Err(error) = store.save_config(&config) {
+                crate::logging::push("warn", "state", &format!("无法迁移 mDNS 主机端口: {error}"));
+            }
+        }
         Ok(Self {
             store,
             config: Mutex::new(config),
@@ -29,7 +41,7 @@ impl AppState {
     }
 
     pub fn save(&self) -> AppResult<()> {
-        let config = self.config.lock().unwrap().clone();
+        let config = self.config.lock().unwrap();
         self.store.save_config(&config)?;
         self.store.save_theme(&config.theme)?;
         Ok(())
@@ -85,5 +97,39 @@ impl AppState {
         }
 
         Ok((host, client))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::HostSource;
+
+    #[test]
+    fn migrates_mdns_game_stream_port_to_web_ui_port() {
+        let dir = std::env::temp_dir().join(format!("originium-state-{}", uuid::Uuid::new_v4()));
+        let store = Store::new(dir.clone()).expect("store");
+        let mut config = AppConfig::default();
+        config.hosts.push(Host {
+            id: "discovered".into(),
+            name: "Discovered".into(),
+            address: "192.168.1.20".into(),
+            port: 47989,
+            username: None,
+            cert_fingerprint: None,
+            source: HostSource::Mdns,
+            paired: false,
+            favorite: false,
+            last_connected_at: None,
+            note: None,
+        });
+        store.save_config(&config).expect("save config");
+
+        let state = AppState::new(store).expect("state");
+        assert_eq!(state.snapshot().hosts[0].port, 47990);
+        let reloaded = state.store.load_config();
+        assert_eq!(reloaded.hosts[0].port, 47990);
+
+        let _ = std::fs::remove_dir_all(dir);
     }
 }

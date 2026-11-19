@@ -56,3 +56,12 @@ installers. The manifest is [`components.lock.json`](../components.lock.json).
 Set a custom executable path in **Settings → Components**, or place a build under
 `%APPDATA%/dev.originium.stream/components/<id>/`. Overrides take precedence over
 bundled installations and are validated by filename.
+
+## Update and removal safety
+
+- Sunshine updates are blocked while its Windows service is running or starting.
+- Moonlight updates/removal are blocked while a session is launching, streaming,
+  or stopping.
+- The Sunshine bundle cannot be removed while its service is still registered.
+  Use **Uninstall service** on the This PC or Settings page first; the
+  component then becomes removable.

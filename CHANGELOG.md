@@ -2,6 +2,32 @@
 
 All notable changes to this project are documented here.
 
+## [0.1.4] - 2026-11-20
+
+### Added
+
+- File-based theme import/export (`theme.json` picker) with size and schema validation; theme assets are restricted to the managed `fonts/` and `backgrounds/` directories.
+- Sunshine service uninstall action on the local host and settings pages.
+- Start-minimized support that reliably hides the main window after Tauri finishes creating it.
+- Component install/uninstall guards for running Sunshine services and active Moonlight sessions, plus executable-name validation for custom component paths.
+
+### Fixed
+
+- mDNS discovery now maps Sunshine's advertised GameStream port (default 47989) to the HTTPS API port (default 47990); previously discovered hosts could not connect. Existing mDNS host entries are migrated on startup.
+- Host detail, app cover, and host-log state no longer leak between hosts when switching routes or tabs.
+- Clearing application logs now truncates the log file as well as the in-memory buffer; log rotation no longer deadlocks on Windows.
+- Component installation rolls back the previous bundle if replacing it fails.
+- Host updates preserve or clear stored credentials correctly, reset certificate trust after address/port changes, and reject empty names, invalid ports, and duplicates.
+- Global hotkey changes no longer unregister the previous shortcut before validating the new one.
+- `startMinimized`, `updateChannel`, and `preferServiceMode` UI inconsistencies were resolved; unavailable updater/service-mode options were removed from the settings UI until implemented.
+- Theme JSON import no longer depends on WebView2 clipboard permissions.
+- Config editor no longer mutates host config in place and blocks saving invalid JSON fields.
+- Missing settings fields from older configs now deserialize with defaults instead of resetting the entire configuration.
+- Local page service labels, LAN URLs, and copy actions are now localized and use the configured host port.
+- Additional UI strings are localized in English and Chinese, including host forms, permissions, virtual input, theme colors, and profile options.
+- LAN address fallback no longer invokes a Linux-only `hostname -I` command.
+- Removed the stale hard-coded GitHub link and corrected the Moonlight installation status display.
+
 ## [0.1.3] - 2026-11-19
 
 ### Added

@@ -138,6 +138,10 @@ impl Store {
             .ok_or_else(|| AppError::theme("无效的文件路径"))?
             .to_string_lossy()
             .to_string();
+        let metadata = fs::metadata(source)?;
+        if metadata.len() > 64 * 1024 * 1024 {
+            return Err(AppError::theme("资源文件过大（最大 64 MB）"));
+        }
         let target = dir.join(&file_name);
         fs::copy(source, &target)?;
         let relative = format!("{kind}s/{file_name}");
@@ -145,14 +149,41 @@ impl Store {
     }
 
     pub fn asset_path(&self, relative: &str) -> Option<PathBuf> {
-        let path = self.data_dir.join(relative.replace('\\', "/"));
-        path.exists().then_some(path)
+        let normalized = relative.trim().replace('\\', "/");
+        if normalized.is_empty() {
+            return None;
+        }
+        let candidate = Path::new(&normalized);
+        if candidate.is_absolute()
+            || candidate.components().any(|component| {
+                !matches!(
+                    component,
+                    std::path::Component::Normal(_) | std::path::Component::CurDir
+                )
+            })
+        {
+            return None;
+        }
+        let mut components = candidate.components();
+        let Some(std::path::Component::Normal(root)) = components.next() else {
+            return None;
+        };
+        if root != "fonts" && root != "backgrounds" {
+            return None;
+        }
+        components.next()?;
+        let base = fs::canonicalize(&self.data_dir).ok()?;
+        let path = fs::canonicalize(self.data_dir.join(candidate)).ok()?;
+        (path.starts_with(&base) && path.is_file()).then_some(path)
     }
 
     pub fn read_asset_base64(&self, relative: &str) -> AppResult<String> {
         let path = self
             .asset_path(relative)
             .ok_or_else(|| AppError::not_found(format!("资源不存在: {relative}")))?;
+        if fs::metadata(&path)?.len() > 64 * 1024 * 1024 {
+            return Err(AppError::theme("资源文件过大（最大 64 MB）"));
+        }
         let mut file = fs::File::open(path)?;
         let mut buffer = Vec::new();
         file.read_to_end(&mut buffer)?;
@@ -183,11 +214,43 @@ pub fn atomic_write(path: &Path, content: &[u8]) -> AppResult<()> {
         file.write_all(content)?;
         file.sync_all()?;
     }
-    if path.exists() {
-        let backup = path.with_extension("bak");
-        let _ = fs::copy(path, backup);
-        fs::remove_file(path).ok();
+    let backup = path.with_extension("bak");
+    let had_original = path.exists();
+    if had_original {
+        fs::copy(path, &backup)?;
+        fs::remove_file(path)?;
     }
-    fs::rename(&temp, path)?;
+    if let Err(error) = fs::rename(&temp, path) {
+        if had_original {
+            let _ = fs::rename(&backup, path);
+        }
+        let _ = fs::remove_file(&temp);
+        return Err(error.into());
+    }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn asset_paths_are_confined_to_asset_directories() {
+        let dir = std::env::temp_dir().join(format!("originium-store-{}", uuid::Uuid::new_v4()));
+        let store = Store::new(dir.clone()).expect("create store");
+        fs::write(store.config_path.clone(), "{}").expect("write config");
+        fs::create_dir_all(store.fonts_dir.join("nested")).expect("create nested");
+        fs::write(store.fonts_dir.join("nested").join("font.woff2"), b"font").expect("write font");
+        fs::write(store.backgrounds_dir.join("wall.png"), b"png").expect("write background");
+
+        assert!(store.asset_path("fonts/nested/font.woff2").is_some());
+        assert!(store.asset_path("backgrounds/wall.png").is_some());
+        assert!(store.asset_path("fonts/../config.json").is_none());
+        assert!(store.asset_path("../config.json").is_none());
+        assert!(store.asset_path("config.json").is_none());
+        assert!(store.asset_path("fonts").is_none());
+        assert!(store.asset_path("C:/Windows/win.ini").is_none());
+
+        let _ = fs::remove_dir_all(dir);
+    }
 }

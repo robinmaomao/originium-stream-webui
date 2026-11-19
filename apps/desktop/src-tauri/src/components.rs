@@ -72,6 +72,9 @@ pub fn installed(store: &Store, id: &str) -> Option<InstalledComponent> {
 }
 
 pub async fn install(app: &AppHandle, store: &Store, id: &str) -> AppResult<InstalledComponent> {
+    if !matches!(id, SUNSHINE_ID | MOONLIGHT_ID) {
+        return Err(AppError::component(format!("未知组件: {id}")));
+    }
     let spec = find_spec(store, id)?;
     let url = spec
         .url
@@ -126,10 +129,17 @@ pub async fn install(app: &AppHandle, store: &Store, id: &str) -> AppResult<Inst
     let target = component_dir(store, id);
     let backup = store.components_dir.join(format!(".{id}.old"));
     let _ = fs::remove_dir_all(&backup);
-    if target.exists() {
+    let had_target = target.exists();
+    if had_target {
         fs::rename(&target, &backup)?;
     }
-    fs::rename(&root, &target)?;
+    if let Err(error) = fs::rename(&root, &target) {
+        if had_target {
+            let _ = fs::rename(&backup, &target);
+        }
+        let _ = fs::remove_dir_all(&staging);
+        return Err(error.into());
+    }
     let _ = fs::remove_dir_all(&staging);
     let _ = fs::remove_dir_all(&backup);
 
@@ -150,6 +160,9 @@ pub async fn install(app: &AppHandle, store: &Store, id: &str) -> AppResult<Inst
 }
 
 pub fn remove(store: &Store, id: &str) -> AppResult<()> {
+    if !matches!(id, SUNSHINE_ID | MOONLIGHT_ID) {
+        return Err(AppError::component(format!("未知组件: {id}")));
+    }
     let dir = component_dir(store, id);
     if dir.exists() {
         fs::remove_dir_all(dir)?;
@@ -314,12 +327,21 @@ pub fn local_ips() -> Vec<String> {
         }
     }
     if ips.is_empty() {
-        let mut hostname = Command::new("hostname.exe");
-        hostname.arg("-I").no_window();
-        if let Ok(output) = hostname.output() {
+        let mut powershell = Command::new("powershell.exe");
+        powershell
+            .args([
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                "Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -ne '127.0.0.1' -and $_.IPAddress -notlike '169.254.*' } | Select-Object -ExpandProperty IPAddress",
+            ])
+            .no_window();
+        if let Ok(output) = powershell.output() {
             ips.extend(
                 String::from_utf8_lossy(&output.stdout)
-                    .split_whitespace()
+                    .lines()
+                    .map(str::trim)
+                    .filter(|line| !line.is_empty())
                     .map(str::to_string),
             );
         }

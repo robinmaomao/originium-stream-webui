@@ -91,6 +91,15 @@
               >
                 {{ t('common.uninstall') }}
               </v-btn>
+              <v-btn
+                v-if="spec.id === 'sunshine' && environment?.sunshineService && environment.sunshineService !== 'not-found'"
+                variant="text"
+                color="error"
+                prepend-icon="mdi-delete-forever"
+                @click="uninstallService"
+              >
+                {{ t('local.uninstallService') }}
+              </v-btn>
             </div>
 
             <v-text-field
@@ -102,6 +111,8 @@
               append-inner-icon="mdi-folder-search"
               @click:append-inner="browsePath(spec.id)"
               @update:model-value="setPathDraft(spec.id, String($event))"
+              @blur="applyPath(spec.id)"
+              @keyup.enter="applyPath(spec.id)"
             />
           </v-card>
         </v-col>
@@ -118,7 +129,6 @@
             <v-switch v-model="form.autostart" :label="t('settings.autostart')" hide-details />
             <v-switch v-model="form.startMinimized" :label="t('settings.startMinimized')" hide-details />
             <v-switch v-model="form.closeToTray" :label="t('settings.closeToTray')" hide-details />
-            <v-switch v-model="form.preferServiceMode" :label="t('settings.serviceMode')" hide-details />
             <v-switch
               v-model="form.autoStartServices"
               :label="t('settings.autoStartServices')"
@@ -132,14 +142,6 @@
               @update:model-value="setThemeMode"
             />
             <v-text-field v-model="form.globalHotkey" :label="t('settings.hotkey')" class="mt-3 mono" />
-            <v-select
-              v-model="form.updateChannel"
-              :items="[
-                { title: t('settings.stable'), value: 'stable' },
-                { title: t('settings.beta'), value: 'beta' },
-              ]"
-              :label="t('settings.updateChannel')"
-            />
             <v-btn class="mt-3" color="primary" block prepend-icon="mdi-content-save" :loading="saving" @click="saveSettings">
               {{ t('common.save') }}
             </v-btn>
@@ -171,7 +173,7 @@
               <div class="text-h6">{{ t('settings.rawIni') }}</div>
               <v-spacer />
               <v-chip size="small" variant="tonal" class="mono">
-                {{ moonlight?.exists ? t('settings.installed') : t('settings.notInstalled') }}
+                {{ environment?.moonlightInstalled ? t('settings.installed') : t('settings.notInstalled') }}
               </v-chip>
             </div>
             <div class="text-caption muted mb-3 mono text-truncate">{{ moonlight?.path ?? '—' }}</div>
@@ -237,7 +239,7 @@
               <span class="mono text-caption">{{ environment?.dataDir }}</span>
             </div>
             <div class="d-flex ga-2 flex-wrap mt-4">
-              <v-btn variant="tonal" prepend-icon="mdi-github" @click="openUrl('https://github.com')">
+              <v-btn variant="tonal" prepend-icon="mdi-github" @click="openUrl('https://github.com/robinmaomao/originium-stream-webui')">
                 GitHub
               </v-btn>
               <v-btn variant="text" color="error" prepend-icon="mdi-power" @click="quit">
@@ -321,13 +323,26 @@ onMounted(async () => {
 async function loadAll() {
   try {
     manifest.value = await api.getComponentManifest()
-    moonlight.value = await api.getMoonlightSettings()
-    iniText.value = JSON.stringify(moonlight.value.sections, null, 2)
-    logPath.value = await api.getLogPath()
-    autostart.value = await api.getAutostart()
-    form.autostart = autostart.value
   } catch (error) {
     app.notify(api.errorMessage(error), 'error')
+  }
+  try {
+    const settings = await api.getMoonlightSettings()
+    moonlight.value = settings
+    iniText.value = JSON.stringify(settings.sections, null, 2)
+  } catch (error) {
+    app.notify(api.errorMessage(error), 'error')
+  }
+  try {
+    logPath.value = await api.getLogPath()
+  } catch {
+    logPath.value = null
+  }
+  try {
+    autostart.value = await api.getAutostart()
+    form.autostart = autostart.value
+  } catch {
+    autostart.value = form.autostart
   }
 }
 
@@ -353,20 +368,38 @@ async function install(id: string) {
 }
 
 async function uninstall(id: string) {
+  if (!window.confirm(`${t('common.uninstall')} ${id}?`)) return
   try {
     await app.removeComponent(id)
+    if (id === 'sunshine') form.sunshinePath = null
+    if (id === 'moonlight') {
+      form.moonlightPath = null
+      moonlight.value = null
+      iniText.value = '{}'
+    }
     await app.refreshEnvironment()
   } catch (error) {
     app.notify(api.errorMessage(error), 'error')
   }
 }
 
-async function browsePath(id: string) {
-  const path = await open({
+async function uninstallService() {
+  if (!window.confirm(t('local.uninstallServiceConfirm'))) return
+  try {
+    await api.uninstallSunshineService()
+    await app.refreshEnvironment()
+    app.notify(t('local.serviceUninstalled'), 'success')
+  } catch (error) {
+    app.notify(api.errorMessage(error), 'error')
+  }
+}
+
+async function browsePath(id: string) {  const path = await open({
     multiple: false,
     filters: [{ name: 'Executable', extensions: ['exe'] }],
   })
   if (typeof path !== 'string') return
+  const previous = id === 'sunshine' ? form.sunshinePath : form.moonlightPath
   setPathDraft(id, path)
   try {
     await api.setComponentPath(id, path)
@@ -374,6 +407,7 @@ async function browsePath(id: string) {
     if (id === 'moonlight') form.moonlightPath = path
     await app.refreshEnvironment()
   } catch (error) {
+    setPathDraft(id, previous ?? '')
     app.notify(api.errorMessage(error), 'error')
   }
 }
@@ -383,12 +417,25 @@ function setPathDraft(id: string, value: string) {
   if (id === 'moonlight') form.moonlightPath = value || null
 }
 
+async function applyPath(id: string) {
+  const path = id === 'sunshine' ? form.sunshinePath : form.moonlightPath
+  try {
+    await api.setComponentPath(id, path || null)
+    await app.refreshEnvironment()
+    return true
+  } catch (error) {
+    app.notify(api.errorMessage(error), 'error')
+    return false
+  }
+}
+
 async function saveSettings() {
   saving.value = true
   try {
-    await app.saveSettings({ ...form, defaultProfile: { ...form.defaultProfile } })
+    if (!(await applyPath('sunshine')) || !(await applyPath('moonlight'))) return
     await api.setAutostart(form.autostart)
     await api.setGlobalHotkey(form.globalHotkey)
+    await app.saveSettings({ ...form, defaultProfile: { ...form.defaultProfile } })
     await applyWindowChrome(form.acrylic, themeStore.theme)
     i18n.global.locale.value = form.language as 'zh-CN' | 'en'
     app.notify(t('common.save'), 'success')

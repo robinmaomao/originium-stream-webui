@@ -43,8 +43,12 @@ export const useLogsStore = defineStore('logs', {
       }
     },
     async clear() {
-      await api.clearAppLogs()
-      this.appLogs = []
+      try {
+        await api.clearAppLogs()
+        this.appLogs = []
+      } catch (error) {
+        useAppStore().notify(api.errorMessage(error), 'error')
+      }
     },
   },
 })

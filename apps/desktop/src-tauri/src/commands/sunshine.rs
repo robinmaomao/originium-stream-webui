@@ -254,12 +254,17 @@ pub async fn pair_with_pin(
     }
 
     if result.paired {
-        let _ = tokio::time::timeout(Duration::from_secs(15), child.wait()).await;
+        if tokio::time::timeout(Duration::from_secs(15), child.wait())
+            .await
+            .is_err()
+        {
+            let _ = child.kill().await;
+        }
         if let Some(mut host) = state.host(&host_id) {
             host.paired = true;
             state.update_host(host)?;
         }
-        crate::logging::push("info", "pairing", &format!("配对成功: {}", host.name));
+        crate::logging::push("info", "pairing", &format!("配对成功: {host_id}"));
     } else {
         let _ = child.kill().await;
     }
