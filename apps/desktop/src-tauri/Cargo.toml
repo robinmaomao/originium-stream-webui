@@ -27,7 +27,7 @@ reqwest = { version = "0.12", default-features = false, features = ["json", "nat
 thiserror = "2"
 anyhow = "1"
 base64 = "0.22"
-sha2 = "0.10"
+sha2 = "0.11"
 hex = "0.4"
 zip = "2"
 mdns-sd = "0.13"
