@@ -32,7 +32,7 @@ export const useAppStore = defineStore('app', {
     onboardingComplete: (state) => state.config?.onboardingComplete ?? false,
     isStreaming: (state) =>
       state.session?.state === 'streaming' || state.session?.state === 'launching',
-    appVersion: (state) => state.environment?.appVersion ?? '0.1.2',
+    appVersion: (state) => state.environment?.appVersion ?? '0.1.3',
   },
   actions: {
     notify(message: string, color = 'info', hint = '') {
@@ -74,6 +74,15 @@ export const useAppStore = defineStore('app', {
     async completeOnboarding() {
       await api.completeOnboarding()
       if (this.config) this.config.onboardingComplete = true
+    },
+    async autoStartSunshineService() {
+      if (!this.settings?.autoStartServices) return
+      try {
+        const status = await api.startSunshineService()
+        if (status.found) await this.refreshEnvironment()
+      } catch (error) {
+        this.notify(api.errorMessage(error), 'warning')
+      }
     },
     async installComponent(id: string, onProgress?: (progress: ComponentProgress) => void) {
       let installed

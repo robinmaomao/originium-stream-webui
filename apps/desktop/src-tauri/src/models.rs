@@ -122,6 +122,8 @@ pub struct AppSettings {
     pub update_channel: String,
     pub prefer_service_mode: bool,
     #[serde(default = "default_true")]
+    pub auto_start_services: bool,
+    #[serde(default = "default_true")]
     pub acrylic: bool,
 }
 
@@ -138,6 +140,7 @@ impl Default for AppSettings {
             default_profile: StreamProfile::default(),
             update_channel: "stable".into(),
             prefer_service_mode: true,
+            auto_start_services: true,
             acrylic: true,
         }
     }
@@ -461,5 +464,16 @@ mod tests {
         value.as_object_mut().expect("settings object").remove("acrylic");
         let settings: AppSettings = serde_json::from_value(value).expect("deserialize settings");
         assert!(settings.acrylic);
+    }
+
+    #[test]
+    fn app_settings_missing_auto_start_services_defaults_to_true() {
+        let mut value = serde_json::to_value(AppSettings::default()).expect("serialize settings");
+        value
+            .as_object_mut()
+            .expect("settings object")
+            .remove("autoStartServices");
+        let settings: AppSettings = serde_json::from_value(value).expect("deserialize settings");
+        assert!(settings.auto_start_services);
     }
 }

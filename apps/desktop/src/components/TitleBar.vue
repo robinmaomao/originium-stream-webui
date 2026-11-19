@@ -259,10 +259,37 @@ async function toggleTheme() {
   color: #fff;
 }
 
+@media (max-width: 1280px) {
+  .session-chip {
+    display: none;
+  }
+}
+
 @media (max-width: 1120px) {
+  .titlebar {
+    gap: 8px;
+    padding-left: 10px;
+  }
+
   .titlebar-sub,
   .titlebar-divider {
     display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .titlebar-heading {
+    display: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .brand-copy {
+    display: none;
+  }
+
+  .window-button {
+    width: 32px;
   }
 }
 </style>

@@ -13,6 +13,7 @@
               :to="item.to"
               :prepend-icon="item.icon"
               :title="rail ? undefined : t(item.title)"
+              :aria-label="t(item.title)"
               rounded="lg"
               class="nav-item"
               active-class="nav-item-active"
@@ -56,10 +57,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useTheme } from 'vuetify'
+import { useDisplay, useTheme } from 'vuetify'
 import { useAppStore } from '@/stores/app'
 import { useSessionStore } from '@/stores/session'
 import { useThemeStore } from '@/stores/theme'
@@ -71,8 +72,9 @@ const session = useSessionStore()
 const themeStore = useThemeStore()
 const route = useRoute()
 const { t } = useI18n()
+const display = useDisplay()
 
-const rail = ref(false)
+const rail = computed(() => display.width.value < 1180)
 const isLight = computed(() => (themeStore.theme ? isLightTheme(themeStore.theme) : false))
 
 const navItems = [
@@ -211,6 +213,22 @@ async function toggleQuickTheme() {
 .nav-item {
   margin-bottom: 4px;
   color: var(--originium-text-muted);
+}
+
+.originium-nav.is-rail .nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.originium-nav.is-rail :deep(.v-list-item__prepend) {
+  margin-inline-end: 0;
+}
+
+.originium-nav.is-rail :deep(.v-list-item__spacer),
+.originium-nav.is-rail :deep(.v-list-item__content) {
+  display: none;
 }
 
 .nav-item-active {

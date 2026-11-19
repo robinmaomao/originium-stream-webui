@@ -44,6 +44,18 @@ body {
   overflow: hidden;
 }
 
+// Scrolling remains available, but no scrollbar track is shown in the app UI.
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
 .originium-app .v-application {
   background: transparent !important;
   font-size: calc(15px * var(--originium-scale));
@@ -90,15 +102,33 @@ body {
   flex: 1;
   min-width: 0;
   height: 100%;
+  overflow-x: hidden;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 0;
 }
 
 .page {
-  padding: 28px 32px 48px;
+  padding: clamp(18px, 2.2vw, 32px) clamp(16px, 2.4vw, 32px) clamp(28px, 4vh, 48px);
   max-width: 1500px;
   margin: 0 auto;
   animation: page-in 260ms ease;
+}
+
+@media (max-width: 1180px) {
+  .page {
+    padding: 20px 20px 36px;
+  }
+}
+
+@media (max-width: 760px) {
+  .page {
+    padding: 16px 14px 30px;
+  }
+
+  .page-title {
+    font-size: 1.35rem;
+  }
 }
 
 @keyframes page-in {
@@ -171,17 +201,7 @@ body {
 
 .scroll-area {
   overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(124, 77, 255, 0.45) transparent;
-}
-
-.scroll-area::-webkit-scrollbar {
-  width: 8px;
-}
-
-.scroll-area::-webkit-scrollbar-thumb {
-  background: rgba(124, 77, 255, 0.35);
-  border-radius: 999px;
+  overscroll-behavior: contain;
 }
 
 .mono {

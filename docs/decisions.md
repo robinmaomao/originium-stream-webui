@@ -91,3 +91,23 @@ CSP nonce into the asset `index.html`. Browsers ignore `'unsafe-inline'` when a
 nonce is present, so Tauri's nonce injection for `style-src` is disabled via
 `dangerousDisableAssetCspModification: ["style-src"]`. Script nonces remain
 enabled; only inline style sources are relaxed to keep dynamic themes working.
+
+## ADR-012 - Work-area sizing for Windows DPI
+
+**Status:** accepted
+
+The main window is sized from the current monitor's `work_area`, converted to
+logical pixels with its `scale_factor`, instead of relying on a fixed
+`minWidth`/`minHeight`. This avoids taskbar overlap and windows that cannot fit
+at 125%-200% scaling. The shell also switches to an icon rail under 1180 CSS
+pixels and uses fluid spacing; WebView2 handles CSS pixel scaling automatically.
+
+## ADR-013 - Auto-start Sunshine only
+
+**Status:** accepted
+
+On startup the app may start the Sunshine Windows service (default: enabled),
+because Sunshine is the resident host component. Moonlight has no resident
+Windows service and is started only for a stream, so it is intentionally not
+prelaunched. The service start is skipped when already running and requests UAC
+only when a stopped service actually needs elevation.

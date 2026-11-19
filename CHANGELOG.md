@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented here.
 
+## [0.1.3] - 2026-11-19
+
+### Added
+
+- Adaptive main-window sizing against the current monitor work area, including Windows DPI scaling and taskbar-safe centering.
+- `autoStartServices` setting (enabled by default) to start the Sunshine service when the app launches; UAC is only requested when the service is stopped.
+- Responsive title bar and icon-rail navigation for narrow or high-scaling displays.
+
+### Changed
+
+- Scrollbars are hidden throughout the UI while wheel, touch and keyboard scrolling remain available.
+- Onboarding and page layouts use fluid spacing and remain scrollable without clipped content on short work areas.
+
 ## [0.1.2] - 2026-11-19
 
 ### Fixed

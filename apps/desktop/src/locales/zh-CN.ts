@@ -176,6 +176,7 @@ export default {
     beta: '测试版',
     defaultProfile: '默认串流档',
     serviceMode: '优先使用服务模式',
+    autoStartServices: '启动时自动运行 Sunshine 服务',
     acrylic: '透明磨砂背景',
     darkMode: '深色模式',
     rawIni: '原始 INI 配置',

@@ -119,6 +119,11 @@
             <v-switch v-model="form.startMinimized" :label="t('settings.startMinimized')" hide-details />
             <v-switch v-model="form.closeToTray" :label="t('settings.closeToTray')" hide-details />
             <v-switch v-model="form.preferServiceMode" :label="t('settings.serviceMode')" hide-details />
+            <v-switch
+              v-model="form.autoStartServices"
+              :label="t('settings.autoStartServices')"
+              hide-details
+            />
             <v-switch v-model="form.acrylic" :label="t('settings.acrylic')" hide-details />
             <v-switch
               :model-value="isDark"
@@ -510,6 +515,7 @@ function defaultSettings(): AppSettings {
     defaultProfile: defaultProfile(),
     updateChannel: 'stable',
     preferServiceMode: true,
+    autoStartServices: true,
     acrylic: true,
   }
 }

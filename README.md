@@ -26,6 +26,8 @@ All Sunshine and Moonlight settings live in the same UI, including a fully custo
 ## Features
 
 - **Dual-stack runtime** — local Sunshine service/process supervision plus on-demand Moonlight sessions, both from one window.
+- **Display-aware shell** — the window fits the current monitor work area across Windows DPI scales, with a responsive icon rail on narrow screens and hidden scrollbars that preserve wheel/touch scrolling.
+- **Startup service** — optionally starts the Sunshine service when the app launches; Moonlight remains on-demand and no resident Moonlight process is created.
 - **Component manager** — portable Sunshine and Moonlight bundles are downloaded, SHA-256 verified, extracted, versioned and rolled back automatically. Local overrides are supported for development.
 - **LAN discovery & automated pairing** — `mdns-sd` browse + `moonlight pair --pin` + Sunshine `/api/pin` approval, no manual PIN typing on the client.
 - **Complete settings coverage**

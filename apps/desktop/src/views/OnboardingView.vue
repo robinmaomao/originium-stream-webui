@@ -295,18 +295,20 @@ async function finish() {
 <style scoped>
 .onboarding-shell {
   height: calc(100vh - 48px);
-  display: grid;
-  place-items: center;
-  padding: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: clamp(14px, 3vh, 24px);
   background:
     radial-gradient(circle at 10% 0%, rgba(124, 77, 255, 0.25), transparent 45%),
     radial-gradient(circle at 90% 10%, rgba(0, 229, 255, 0.16), transparent 40%),
     #08080c;
 }
 .onboarding-card {
-  width: min(980px, 96vw);
+  width: min(980px, 100%);
+  margin-block: auto;
   border-radius: 28px;
-  padding: 28px 32px;
+  padding: clamp(20px, 3vw, 32px);
 }
 .logo-mark {
   width: 46px;

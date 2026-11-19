@@ -65,6 +65,7 @@ onMounted(async () => {
     await router.replace('/local')
   }
   session.startPolling()
+  if (!isHud.value) void app.autoStartSunshineService()
 })
 
 watch(

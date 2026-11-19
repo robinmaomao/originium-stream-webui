@@ -40,8 +40,15 @@ pub fn get_service_status() -> AppResult<ServiceStatus> {
 pub async fn start_sunshine_service() -> AppResult<ServiceStatus> {
     let status = components::sunshine_service_status()?;
     if let Some(name) = status.name.clone() {
-        components::start_service(&name)?;
-        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+        let state = status.state.as_deref().unwrap_or_default();
+        let running = state.eq_ignore_ascii_case("running");
+        let starting = state.eq_ignore_ascii_case("start pending") || state.eq_ignore_ascii_case("starting");
+        if !running && !starting {
+            components::start_service(&name)?;
+        }
+        if !running {
+            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+        }
     }
     components::sunshine_service_status()
 }

@@ -176,6 +176,7 @@ export default {
     beta: 'Beta',
     defaultProfile: 'Default stream profile',
     serviceMode: 'Prefer service mode',
+    autoStartServices: 'Start Sunshine service on launch',
     acrylic: 'Transparent acrylic background',
     darkMode: 'Dark mode',
     rawIni: 'Raw INI configuration',

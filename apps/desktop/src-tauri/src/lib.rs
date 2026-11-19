@@ -12,7 +12,7 @@ mod sunshine;
 
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-use tauri::{AppHandle, Manager, WindowEvent};
+use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, WindowEvent};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
 use crate::state::AppState;
@@ -51,6 +51,9 @@ pub fn run() {
             let hotkey = state.snapshot().settings.global_hotkey.clone();
             app.manage(state);
 
+            if let Err(error) = fit_main_window(app) {
+                logging::push("warn", "app", &format!("无法适配主窗口尺寸: {error}"));
+            }
             setup_tray(app)?;
             if let Ok(shortcut) = hotkey.parse::<tauri_plugin_global_shortcut::Shortcut>() {
                 let _ = app.global_shortcut().register(shortcut);
@@ -161,6 +164,45 @@ pub fn run() {
         .expect("error while running tauri application");
 }
 
+fn window_metrics(work_width: f64, work_height: f64) -> (f64, f64, f64, f64) {
+    const MARGIN: f64 = 24.0;
+    let available_width = (work_width - MARGIN * 2.0).max(320.0);
+    let available_height = (work_height - MARGIN * 2.0).max(320.0);
+    let width = 1360.0_f64.min(available_width);
+    let height = 860.0_f64.min(available_height);
+    (width, height, 720.0_f64.min(width), 480.0_f64.min(height))
+}
+
+/// Size the main window against the current monitor's work area, not the full
+/// screen, so taskbars and non-100% Windows scaling cannot leave controls off-screen.
+fn fit_main_window(app: &tauri::App) -> tauri::Result<()> {
+    let Some(window) = app.get_webview_window("main") else {
+        return Ok(());
+    };
+    if window.is_maximized().unwrap_or(false) {
+        return Ok(());
+    }
+
+    let monitor = window.current_monitor()?.or(window.primary_monitor()?);
+    let Some(monitor) = monitor else {
+        return Ok(());
+    };
+
+    let scale = monitor.scale_factor();
+    let work = monitor.work_area();
+    let work_size = work.size.to_logical::<f64>(scale);
+    let work_position = work.position.to_logical::<f64>(scale);
+    let (width, height, min_width, min_height) = window_metrics(work_size.width, work_size.height);
+
+    window.set_min_size(Some(LogicalSize::new(min_width, min_height)))?;
+    window.set_size(LogicalSize::new(width, height))?;
+    window.set_position(LogicalPosition::new(
+        work_position.x + (work_size.width - width) / 2.0,
+        work_position.y + (work_size.height - height) / 2.0,
+    ))?;
+    Ok(())
+}
+
 fn setup_tray(app: &tauri::App) -> tauri::Result<()> {
     let show = MenuItem::with_id(app, "show", "显示主窗口", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "退出 Originium Stream", true, None::<&str>)?;
@@ -211,5 +253,19 @@ pub(crate) fn toggle_hud(app: &AppHandle) {
             let _ = hud.show();
             let _ = hud.set_focus();
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::window_metrics;
+
+    #[test]
+    fn window_metrics_fit_common_scaled_work_areas() {
+        assert_eq!(window_metrics(1536.0, 816.0), (1360.0, 768.0, 720.0, 480.0));
+        assert_eq!(window_metrics(1280.0, 720.0), (1232.0, 672.0, 720.0, 480.0));
+        assert_eq!(window_metrics(960.0, 540.0), (912.0, 492.0, 720.0, 480.0));
+        assert_eq!(window_metrics(1920.0, 1040.0), (1360.0, 860.0, 720.0, 480.0));
+        assert_eq!(window_metrics(640.0, 480.0), (592.0, 432.0, 592.0, 432.0));
     }
 }
