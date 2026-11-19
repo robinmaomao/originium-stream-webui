@@ -51,6 +51,9 @@ jobs:
           Get-ChildItem -Path apps/desktop/src-tauri/target/release/bundle -Recurse -File |
             Where-Object { $_.Extension -in '.exe', '.msi' } |
             Copy-Item -Destination artifacts
+          Get-ChildItem artifacts -File |
+            Where-Object { $_.Name -like '* *' } |
+            ForEach-Object { Rename-Item -LiteralPath $_.FullName -NewName ($_.Name -replace ' ', '.') }
           $stage = Join-Path $env:RUNNER_TEMP 'portable'
           New-Item -ItemType Directory -Force -Path $stage | Out-Null
           Copy-Item apps/desktop/src-tauri/target/release/originium-stream.exe (Join-Path $stage 'Originium Stream.exe')
