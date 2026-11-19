@@ -2,6 +2,15 @@
 
 > One application to host **and** to stream. Sunshine and Moonlight under a single WebUI.
 
+[![App CI](https://github.com/robinmaomao/originium-stream-webui/actions/workflows/app-ci.yml/badge.svg)](https://github.com/robinmaomao/originium-stream-webui/actions/workflows/app-ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/robinmaomao/originium-stream-webui)](https://github.com/robinmaomao/originium-stream-webui/releases/latest)
+[![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](./LICENSE)
+
+## Download
+
+- [Installer (NSIS) & MSI](https://github.com/robinmaomao/originium-stream-webui/releases/latest)
+- [Portable ZIP](https://github.com/robinmaomao/originium-stream-webui/releases/latest) — extract and run `Originium Stream.exe`
+
 Originium Stream is a Windows desktop application that unifies:
 
 - **Sunshine** — the open-source game stream host, managed as a background service or child process.
