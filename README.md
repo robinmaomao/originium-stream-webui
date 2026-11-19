@@ -111,12 +111,12 @@ Components are described by [`components.lock.json`](./components.lock.json):
 ```json
 {
   "id": "moonlight",
-  "variant": "upstream",
-  "version": "6.2.0",
-  "url": "https://github.com/moonlight-stream/moonlight-qt/releases/download/v6.2.0/MoonlightPortable-x64-6.2.0.zip",
-  "sha256": "6f91d268b41ed5ca8066d9d7578dc403b8db190991ff48f00b1700465f8f7ebf",
-  "entry": "moonlight.exe",
-  "capabilities": ["control-pipe", "embed-parent"]
+  "variant": "originium",
+  "version": "6.2.0-org.1",
+  "url": "https://github.com/robinmaomao/originium-moonlight/releases/download/v6.2.0-org.1/MoonlightPortable-x64-6.2.0.zip",
+  "sha256": "8872b268b3d29eae0d6c4ecddb56cf0485dc2be3802d57a782c6f06c8e11be78",
+  "entry": "Moonlight.exe",
+  "capabilities": ["control-pipe"]
 }
 ```
 
@@ -125,7 +125,7 @@ Capabilities let the app degrade gracefully when an official upstream build is u
 ## Relationship with upstream projects
 
 - [Sunshine](https://github.com/LizardByte/Sunshine) and [moonlight-qt](https://github.com/moonlight-stream/moonlight-qt) are **GPL-3.0**.
-- Originium Stream **does not modify or push to upstream repositories**. Forks are read-only mirrors; patches live on our own `originium` branches.
+- Originium Stream **does not modify or push to upstream repositories**. Patches live on the `originium` branches of [originium-sunshine](https://github.com/robinmaomao/originium-sunshine) and [originium-moonlight](https://github.com/robinmaomao/originium-moonlight); both forks track upstream history for rebases.
 - Bundled binaries must be accompanied by their license texts and source availability (see [third_party_licenses](./third_party_licenses/README.md)).
 
 ## License

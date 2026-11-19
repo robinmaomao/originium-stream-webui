@@ -11,12 +11,12 @@ installers. The manifest is [`components.lock.json`](../components.lock.json).
     {
       "id": "sunshine",
       "variant": "upstream | originium",
-      "version": "2026.914.233613",
+      "version": "2026.1119-org.1",
       "upstream": "v2026.914.233613",
-      "url": "https://…/Sunshine-Windows-AMD64-lite.zip",
+      "url": "https://github.com/robinmaomao/originium-sunshine/releases/download/v2026.1119-org.1/Sunshine-Originium-x64.zip",
       "sha256": "…",
       "entry": "sunshine.exe",
-      "capabilities": ["session-events", "no-webui"]
+      "capabilities": ["session-events"]
     }
   ]
 }

@@ -2,6 +2,20 @@
 
 All notable changes to this project are documented here.
 
+## [0.1.1] - 2026-11-19
+
+### Added
+
+- Originium Sunshine fork component with `GET /api/session` live session events.
+- Originium Moonlight fork component with a framed JSON control pipe (`session.state`, `session.stop`).
+- Live session status card on the local host page, including the running application name.
+- Graceful session shutdown through the control pipe before process termination.
+
+### Changed
+
+- `components.lock.json` now pins the Originium Sunshine and Moonlight fork releases with SHA-256 hashes and capability flags.
+- Moonlight packages ship an active `portable.dat`, so the settings editor and launcher share the same INI file.
+
 ## [0.1.0] - 2026-11-19
 
 ### Added

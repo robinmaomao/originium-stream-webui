@@ -81,7 +81,7 @@ pub async fn install(app: &AppHandle, store: &Store, id: &str) -> AppResult<Inst
     let client = reqwest::Client::builder()
         .connect_timeout(std::time::Duration::from_secs(20))
         .timeout(std::time::Duration::from_secs(900))
-        .user_agent("Originium-Stream/0.1.0")
+        .user_agent("Originium-Stream/0.1.1")
         .build()?;
     let response = client.get(&url).send().await?;
     if !response.status().is_success() {
