@@ -1,0 +1,43 @@
+[package]
+name = "originium-stream"
+version = "0.1.0"
+description = "Originium Stream - unified Sunshine host and Moonlight client"
+edition = "2021"
+license = "GPL-3.0-or-later"
+authors = ["Originium Stream contributors"]
+
+[lib]
+name = "originium_stream_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon", "image-png", "protocol-asset"] }
+tauri-plugin-autostart = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-global-shortcut = "2"
+tauri-plugin-opener = "2"
+tauri-plugin-single-instance = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "native-tls", "charset", "http2", "stream"] }
+thiserror = "2"
+anyhow = "1"
+base64 = "0.22"
+sha2 = "0.10"
+hex = "0.4"
+zip = "2"
+mdns-sd = "0.13"
+keyring = "3"
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12"] }
+rustls-pki-types = "1"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+futures = "0.3"
+
+[features]
+default = []

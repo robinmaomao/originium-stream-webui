@@ -1,0 +1,88 @@
+name: App CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: app-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Check (Windows)
+    runs-on: windows-latest
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri -> target
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm --filter @originium/desktop typecheck
+
+      - name: Frontend tests
+        run: pnpm --filter @originium/desktop test
+
+      - name: Lint
+        run: pnpm --filter @originium/desktop lint
+
+      - name: Frontend build
+        run: pnpm build
+
+      - name: Rust format
+        working-directory: apps/desktop/src-tauri
+        run: cargo fmt --check
+
+      - name: Rust clippy
+        working-directory: apps/desktop/src-tauri
+        run: cargo clippy -- -D warnings
+
+      - name: Rust tests
+        working-directory: apps/desktop/src-tauri
+        run: cargo test
+
+      - name: Tauri compile (no bundle)
+        run: pnpm --filter @originium/desktop tauri build --debug --no-bundle
+
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

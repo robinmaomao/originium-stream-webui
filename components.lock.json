@@ -1,0 +1,24 @@
+{
+  "components": [
+    {
+      "id": "sunshine",
+      "variant": "upstream",
+      "version": "2026.914.233613",
+      "upstream": "v2026.914.233613",
+      "url": "https://github.com/SunshineStream/Sunshine/releases/download/v2026.914.233613/Sunshine-Windows-AMD64-lite.zip",
+      "sha256": "",
+      "entry": "sunshine.exe",
+      "capabilities": []
+    },
+    {
+      "id": "moonlight",
+      "variant": "upstream",
+      "version": "6.2.0",
+      "upstream": "v6.2.0",
+      "url": "https://github.com/moonlight-stream/moonlight-qt/releases/download/v6.2.0/MoonlightPortable-x64-6.2.0.zip",
+      "sha256": "6f91d268b41ed5ca8066d9d7578dc403b8db190991ff48f00b1700465f8f7ebf",
+      "entry": "moonlight.exe",
+      "capabilities": []
+    }
+  ]
+}

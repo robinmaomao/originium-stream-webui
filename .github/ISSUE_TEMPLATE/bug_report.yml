@@ -1,0 +1,41 @@
+name: Bug report
+description: Report a defect in Originium Stream
+title: '[Bug] '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Do **not** include credentials or certificate private keys.
+  - type: input
+    id: version
+    attributes:
+      label: Originium Stream version
+      placeholder: 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: Windows 11 24H2
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Diagnostics
+      description: Attach a diagnostics bundle exported from Settings → Advanced (redact sensitive paths if needed).
+      render: text
