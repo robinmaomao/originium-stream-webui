@@ -46,9 +46,9 @@ installers. The manifest is [`components.lock.json`](../components.lock.json).
 
 | Capability | Used for | Fallback |
 |---|---|---|
-| `control-pipe` | Named-pipe control channel (`session.start`, `session.state`) | CLI + exit codes |
+| `control-pipe` | Named-pipe control channel: `session.state`, `session.stop` (start remains CLI-driven) | CLI + exit codes |
 | `embed-parent` | Native child-window embedding | Borderless fullscreen + HUD |
-| `session-events` | SSE/webhook session notifications | Log polling |
+| `session-events` | `GET /api/session` status polling (Originium Sunshine fork) | Paired-client list + log polling |
 | `no-webui` | Embedded upstream WebUI removed | N/A |
 
 ## Local overrides

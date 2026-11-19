@@ -7,6 +7,10 @@ use std::time::Duration;
 
 use serde_json::{Map, Value};
 use tokio::io::{AsyncBufReadExt, BufReader};
+#[cfg(windows)]
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+#[cfg(windows)]
+use tokio::net::windows::named_pipe::{ClientOptions, NamedPipeClient};
 use tokio::process::Command;
 use tokio::time::timeout;
 
@@ -201,6 +205,55 @@ pub fn build_stream_args(host: &Host, app_name: &str, profile: &StreamProfile) -
 
 pub struct SessionManager {
     snapshot: Arc<Mutex<SessionSnapshot>>,
+    #[cfg(windows)]
+    control: Option<ControlPipeClient>,
+}
+
+#[cfg(windows)]
+pub struct ControlPipeClient {
+    pipe: NamedPipeClient,
+}
+
+#[cfg(windows)]
+impl ControlPipeClient {
+    pub async fn connect(name: &str, timeout_ms: u64) -> AppResult<Self> {
+        let path = format!(r"\\.\pipe\{name}");
+        let deadline = std::time::Instant::now() + std::time::Duration::from_millis(timeout_ms);
+        loop {
+            match ClientOptions::new().open(&path) {
+                Ok(pipe) => return Ok(Self { pipe }),
+                Err(error) => {
+                    if std::time::Instant::now() >= deadline {
+                        return Err(AppError::process(format!("控制通道连接失败（{path}）: {error}")));
+                    }
+                    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+                }
+            }
+        }
+    }
+
+    pub async fn request(&mut self, command: &str) -> AppResult<Value> {
+        let payload = serde_json::json!({ "v": 1, "id": "originium-1", "cmd": command });
+        let bytes = serde_json::to_vec(&payload)?;
+        let length = u32::try_from(bytes.len()).map_err(|_| AppError::process("控制通道消息过长"))?;
+        self.pipe.write_all(&length.to_le_bytes()).await?;
+        self.pipe.write_all(&bytes).await?;
+        self.pipe.flush().await?;
+
+        let mut length_bytes = [0u8; 4];
+        timeout(
+            std::time::Duration::from_secs(3),
+            self.pipe.read_exact(&mut length_bytes),
+        )
+        .await
+        .map_err(|_| AppError::process("控制通道响应超时"))??;
+        let response_length = u32::from_le_bytes(length_bytes) as usize;
+        let mut response = vec![0u8; response_length];
+        timeout(std::time::Duration::from_secs(3), self.pipe.read_exact(&mut response))
+            .await
+            .map_err(|_| AppError::process("控制通道响应超时"))??;
+        Ok(serde_json::from_slice(&response)?)
+    }
 }
 
 impl Default for SessionManager {
@@ -213,6 +266,8 @@ impl SessionManager {
     pub fn new() -> Self {
         Self {
             snapshot: Arc::new(Mutex::new(SessionSnapshot::default())),
+            #[cfg(windows)]
+            control: None,
         }
     }
 
@@ -220,17 +275,22 @@ impl SessionManager {
         self.snapshot.lock().unwrap().clone()
     }
 
-    pub fn reset(&self) {
+    pub fn reset(&mut self) {
+        #[cfg(windows)]
+        {
+            self.control = None;
+        }
         *self.snapshot.lock().unwrap() = SessionSnapshot::default();
     }
 
     /// Launch a moonlight streaming session and monitor its lifecycle.
     pub async fn launch(
-        &self,
+        &mut self,
         moonlight_exe: &Path,
         host: &Host,
         app_name: &str,
         profile: &StreamProfile,
+        control_enabled: bool,
     ) -> AppResult<SessionSnapshot> {
         {
             let snapshot = self.snapshot.lock().unwrap();
@@ -242,7 +302,14 @@ impl SessionManager {
             }
         }
 
-        let args = build_stream_args(host, app_name, profile);
+        let mut args = build_stream_args(host, app_name, profile);
+        let mut control_name = None;
+        if control_enabled {
+            let name = format!("originium-moonlight-{}", uuid::Uuid::new_v4().simple());
+            args.push("--control-pipe".into());
+            args.push(name.clone());
+            control_name = Some(name);
+        }
         crate::logging::push(
             "info",
             "moonlight",
@@ -260,6 +327,22 @@ impl SessionManager {
             AppError::process(format!("无法启动 moonlight（{}）: {error}", moonlight_exe.display()))
         })?;
         let pid = child.id();
+
+        #[cfg(windows)]
+        if let Some(name) = control_name {
+            match timeout(Duration::from_secs(4), ControlPipeClient::connect(&name, 3000)).await {
+                Ok(Ok(client)) => {
+                    self.control = Some(client);
+                    crate::logging::push("info", "moonlight", "已连接控制通道");
+                }
+                Ok(Err(error)) => {
+                    crate::logging::push("warn", "moonlight", &format!("控制通道不可用: {error}"));
+                }
+                Err(_) => {
+                    crate::logging::push("warn", "moonlight", "控制通道连接超时");
+                }
+            }
+        }
 
         {
             let mut snapshot = self.snapshot.lock().unwrap();
@@ -319,12 +402,17 @@ impl SessionManager {
         Ok(self.snapshot())
     }
 
-    pub async fn stop(&self, moonlight_exe: Option<&Path>, host: &Host) -> AppResult<SessionSnapshot> {
+    pub async fn stop(&mut self, moonlight_exe: Option<&Path>, host: &Host) -> AppResult<SessionSnapshot> {
         let pid = {
             let mut snapshot = self.snapshot.lock().unwrap();
             snapshot.state = SessionState::Stopping;
             snapshot.pid
         };
+
+        #[cfg(windows)]
+        if let Some(mut control) = self.control.take() {
+            let _ = timeout(Duration::from_secs(2), control.request("session.stop")).await;
+        }
 
         if let Some(pid) = pid {
             let _ = Command::new("taskkill.exe")

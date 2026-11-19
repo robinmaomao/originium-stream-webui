@@ -54,8 +54,11 @@ pub async fn launch_session(
     let exe = moonlight::locate(&state.store, &config.settings)
         .ok_or_else(|| AppError::component("未找到 moonlight 可执行文件"))?;
     let profile = profile.unwrap_or(config.settings.default_profile);
-    let session = state.session.lock().await;
-    session.launch(&exe, &host, &app_name, &profile).await
+    let control_enabled = crate::components::installed(&state.store, crate::components::MOONLIGHT_ID)
+        .map(|component| component.capabilities.iter().any(|value| value == "control-pipe"))
+        .unwrap_or(false);
+    let mut session = state.session.lock().await;
+    session.launch(&exe, &host, &app_name, &profile, control_enabled).await
 }
 
 #[tauri::command]
@@ -67,7 +70,7 @@ pub async fn stop_session(state: State<'_, AppState>) -> AppResult<SessionSnapsh
     match host {
         Some(host) => state.session.lock().await.stop(exe.as_deref(), &host).await,
         None => {
-            let session = state.session.lock().await;
+            let mut session = state.session.lock().await;
             session.reset();
             Ok(session.snapshot())
         }
