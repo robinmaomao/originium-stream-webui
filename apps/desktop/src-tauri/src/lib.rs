@@ -98,6 +98,7 @@ pub fn run() {
             commands::hosts::set_active_host,
             commands::hosts::reset_host_fingerprint,
             commands::sunshine::get_config,
+            commands::sunshine::get_session_status,
             commands::sunshine::save_config,
             commands::sunshine::get_config_locale,
             commands::sunshine::get_apps,

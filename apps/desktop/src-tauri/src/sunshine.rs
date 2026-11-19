@@ -150,6 +150,10 @@ impl SunshineClient {
         self.get_json("/api/config").await
     }
 
+    pub async fn get_session_status(&self) -> AppResult<Value> {
+        self.get_json("/api/session").await
+    }
+
     pub async fn save_config(&self, config: &Value) -> AppResult<Value> {
         self.post_json("/api/config", config).await
     }

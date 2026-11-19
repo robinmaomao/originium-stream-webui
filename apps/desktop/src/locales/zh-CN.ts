@@ -86,6 +86,11 @@ export default {
     notAdmin: '普通权限',
     webview2: 'WebView2',
     version: '版本',
+    liveStatus: '本机串流状态',
+    noClients: '当前没有客户端在串流本机',
+    capabilityHint: '安装 Originium Sunshine 构建后可实时读取会话状态',
+    live: '实时',
+    appRunning: '正在串流的应用',
   },
   hosts: {
     title: '主机',

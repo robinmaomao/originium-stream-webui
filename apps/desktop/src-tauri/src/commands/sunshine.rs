@@ -17,6 +17,12 @@ pub async fn get_config(state: State<'_, AppState>, host_id: String) -> AppResul
 }
 
 #[tauri::command]
+pub async fn get_session_status(state: State<'_, AppState>, host_id: String) -> AppResult<Value> {
+    let (_, client) = state.client_for(&host_id).await?;
+    client.get_session_status().await
+}
+
+#[tauri::command]
 pub async fn save_config(state: State<'_, AppState>, host_id: String, config: Value) -> AppResult<Value> {
     let (_, client) = state.client_for(&host_id).await?;
     client.save_config(&config).await

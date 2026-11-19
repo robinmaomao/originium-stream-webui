@@ -67,6 +67,8 @@ export const resetHostFingerprint = (id: string) => invoke<Host>('reset_host_fin
 
 // Sunshine
 export const getHostConfig = (hostId: string) => invoke<Record<string, unknown>>('get_config', { hostId })
+export const getSessionStatus = (hostId: string) =>
+  invoke<Record<string, unknown>>('get_session_status', { hostId })
 export const saveHostConfig = (hostId: string, config: Record<string, unknown>) =>
   invoke<Record<string, unknown>>('save_config', { hostId, config })
 export const getConfigLocale = (hostId: string) => invoke<Record<string, unknown>>('get_config_locale', { hostId })

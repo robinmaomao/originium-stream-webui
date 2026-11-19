@@ -86,6 +86,11 @@ export default {
     notAdmin: 'Standard user',
     webview2: 'WebView2',
     version: 'Version',
+    liveStatus: 'Local session',
+    noClients: 'No client is streaming from this PC',
+    capabilityHint: 'Install an Originium Sunshine build to read live session state',
+    live: 'Live',
+    appRunning: 'Streaming app',
   },
   hosts: {
     title: 'Hosts',

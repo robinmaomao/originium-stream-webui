@@ -129,6 +129,37 @@
       <v-col cols="12" lg="6">
         <v-card class="glass pa-5 h-100" elevation="0">
           <div class="d-flex align-center ga-3 mb-4">
+            <v-icon :color="localSessionRunning ? 'success' : 'info'" size="28" icon="mdi-broadcast" />
+            <div>
+              <div class="text-h6">{{ t('local.liveStatus') }}</div>
+              <div class="text-caption muted">/api/session</div>
+            </div>
+            <v-spacer />
+            <v-chip
+              :color="localSessionRunning ? 'success' : 'default'"
+              variant="tonal"
+              size="small"
+            >
+              {{ localSessionRunning ? t('session.streaming') : t('session.idle') }}
+            </v-chip>
+          </div>
+
+          <template v-if="sessionEventsEnabled">
+            <div v-if="localSessionRunning">
+              <div class="section-label">{{ t('local.appRunning') }}</div>
+              <div class="text-body-1">{{ localSession?.appName || '—' }}</div>
+            </div>
+            <div v-else class="muted">{{ t('local.noClients') }}</div>
+          </template>
+          <v-alert v-else type="info" variant="tonal" density="comfortable">
+            {{ t('local.capabilityHint') }}
+          </v-alert>
+        </v-card>
+      </v-col>
+
+      <v-col cols="12" lg="6">
+        <v-card class="glass pa-5 h-100" elevation="0">
+          <div class="d-flex align-center ga-3 mb-4">
             <v-icon color="info" size="28" icon="mdi-lan" />
             <div class="text-h6">{{ t('local.addresses') }}</div>
           </div>
@@ -259,11 +290,20 @@ const approveError = ref('')
 const pin = ref('')
 
 let pollTimer: number | null = null
+let sessionTimer: number | null = null
 
 const environment = computed(() => app.environment)
 const localHost = computed(() => hosts.localHost)
 const sunshineInstalled = computed(() => Boolean(environment.value?.sunshineInstalled))
 const moonlightInstalled = computed(() => Boolean(environment.value?.moonlightInstalled))
+const sunshineComponent = computed(() =>
+  app.components.find((component) => component.id === 'sunshine'),
+)
+const sessionEventsEnabled = computed(() =>
+  Boolean(sunshineComponent.value?.capabilities?.includes('session-events')),
+)
+const localSession = ref<Record<string, unknown> | null>(null)
+const localSessionRunning = computed(() => Boolean(localSession.value?.running))
 const sunshineVersion = computed(
   () => app.components.find((component) => component.id === 'sunshine')?.version ?? '—',
 )
@@ -283,11 +323,28 @@ onMounted(async () => {
   pollTimer = window.setInterval(() => {
     void loadPairings()
   }, 5000)
+  sessionTimer = window.setInterval(() => {
+    void pollLocalSession()
+  }, 3000)
+  void pollLocalSession()
 })
 
 onUnmounted(() => {
   if (pollTimer !== null) window.clearInterval(pollTimer)
+  if (sessionTimer !== null) window.clearInterval(sessionTimer)
 })
+
+async function pollLocalSession() {
+  if (!sessionEventsEnabled.value || !localHost.value) {
+    localSession.value = null
+    return
+  }
+  try {
+    localSession.value = await api.getSessionStatus(localHost.value.id)
+  } catch {
+    localSession.value = null
+  }
+}
 
 async function refresh() {
   refreshing.value = true
