@@ -51,6 +51,13 @@ jobs:
           Get-ChildItem -Path apps/desktop/src-tauri/target/release/bundle -Recurse -File |
             Where-Object { $_.Extension -in '.exe', '.msi' } |
             Copy-Item -Destination artifacts
+          $stage = Join-Path $env:RUNNER_TEMP 'portable'
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+          Copy-Item apps/desktop/src-tauri/target/release/originium-stream.exe (Join-Path $stage 'Originium Stream.exe')
+          Copy-Item -Path LICENSE, NOTICE, README.md, components.lock.json -Destination $stage
+          Copy-Item -Recurse third_party_licenses $stage
+          $version = $env:GITHUB_REF_NAME.TrimStart('v')
+          Compress-Archive -Path (Join-Path $stage '*') -DestinationPath (Join-Path artifacts "Originium-Stream-$version-portable-win64.zip")
           Get-FileHash artifacts/* -Algorithm SHA256 |
             ForEach-Object { "$($_.Hash)  $($_.Path | Split-Path -Leaf)" } |
             Set-Content artifacts/SHA256SUMS.txt
