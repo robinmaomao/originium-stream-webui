@@ -124,7 +124,7 @@ Capabilities let the app degrade gracefully when an official upstream build is u
 
 ## Relationship with upstream projects
 
-- [Sunshine](https://github.com/LizardByte/Sunshine) and [moonlight-qt](https://github.com/moonlight-stream/moonlight-qt) are **GPL-3.0**.
+- [Sunshine](https://github.com/SunshineStream/Sunshine) and [moonlight-qt](https://github.com/moonlight-stream/moonlight-qt) are **GPL-3.0**.
 - Originium Stream **does not modify or push to upstream repositories**. Patches live on the `originium` branches of [originium-sunshine](https://github.com/robinmaomao/originium-sunshine) and [originium-moonlight](https://github.com/robinmaomao/originium-moonlight); both forks track upstream history for rebases.
 - Bundled binaries must be accompanied by their license texts and source availability (see [third_party_licenses](./third_party_licenses/README.md)).
 

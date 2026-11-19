@@ -28,7 +28,7 @@ or moonlight requires source availability; public repos keep compliance trivial.
 **Status:** accepted
 
 Originium Stream never pushes to, opens pull requests against, or otherwise modifies
-`LizardByte/Sunshine` or `moonlight-stream/moonlight-qt`. Component forks keep an
+`SunshineStream/Sunshine` or `moonlight-stream/moonlight-qt`. Component forks keep an
 `upstream` remote **for fetch/rebase only**.
 
 ## ADR-005 — Manual typed API bindings instead of tauri-specta
