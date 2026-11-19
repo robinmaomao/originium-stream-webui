@@ -8,6 +8,7 @@ use tokio::time::sleep;
 use crate::error::{AppError, AppResult};
 use crate::models::{BrowseResult, PairingResult, PendingPairing};
 use crate::moonlight;
+use crate::process::NoWindow;
 use crate::state::AppState;
 
 #[tauri::command]
@@ -196,10 +197,13 @@ pub async fn pair_with_pin(
         .ok_or_else(|| AppError::component("未找到 moonlight 可执行文件"))?;
     let (_, client) = state.client_for(&host_id).await?;
 
-    let mut child = tokio::process::Command::new(&moonlight_exe)
+    let mut pair_command = tokio::process::Command::new(&moonlight_exe);
+    pair_command
         .args(["pair", &host.address, "--pin", &pin])
         .stdout(Stdio::null())
         .stderr(Stdio::null())
+        .no_window();
+    let mut child = pair_command
         .spawn()
         .map_err(|error| AppError::process(format!("无法启动 moonlight: {error}")))?;
 

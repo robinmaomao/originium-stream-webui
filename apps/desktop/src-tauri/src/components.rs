@@ -9,6 +9,7 @@ use tauri::{AppHandle, Emitter};
 
 use crate::error::{AppError, AppResult};
 use crate::models::{AppSettings, ComponentSpec, EnvironmentInfo, InstalledComponent};
+use crate::process::NoWindow;
 use crate::store::Store;
 
 pub const SUNSHINE_ID: &str = "sunshine";
@@ -81,7 +82,7 @@ pub async fn install(app: &AppHandle, store: &Store, id: &str) -> AppResult<Inst
     let client = reqwest::Client::builder()
         .connect_timeout(std::time::Duration::from_secs(20))
         .timeout(std::time::Duration::from_secs(900))
-        .user_agent("Originium-Stream/0.1.1")
+        .user_agent("Originium-Stream/0.1.2")
         .build()?;
     let response = client.get(&url).send().await?;
     if !response.status().is_success() {
@@ -248,7 +249,9 @@ pub fn locate_binary(store: &Store, settings: &AppSettings, id: &str) -> Option<
         }
     }
 
-    let output = Command::new("where.exe").arg(executable).output().ok()?;
+    let mut where_command = Command::new("where.exe");
+    where_command.arg(executable).no_window();
+    let output = where_command.output().ok()?;
     if output.status.success() {
         let first = String::from_utf8_lossy(&output.stdout)
             .lines()
@@ -292,7 +295,9 @@ pub fn detect_environment(store: &Store, settings: &AppSettings, app_version: &s
 }
 
 pub fn is_elevated() -> bool {
-    let output = Command::new("whoami.exe").arg("/groups").output();
+    let mut whoami = Command::new("whoami.exe");
+    whoami.arg("/groups").no_window();
+    let output = whoami.output();
     match output {
         Ok(output) => String::from_utf8_lossy(&output.stdout).contains("S-1-16-12288"),
         Err(_) => false,
@@ -309,7 +314,9 @@ pub fn local_ips() -> Vec<String> {
         }
     }
     if ips.is_empty() {
-        if let Ok(output) = Command::new("hostname.exe").arg("-I").output() {
+        let mut hostname = Command::new("hostname.exe");
+        hostname.arg("-I").no_window();
+        if let Ok(output) = hostname.output() {
             ips.extend(
                 String::from_utf8_lossy(&output.stdout)
                     .split_whitespace()
@@ -323,7 +330,9 @@ pub fn local_ips() -> Vec<String> {
 }
 
 pub fn moonlight_version(path: &Path) -> Option<String> {
-    let output = Command::new(path).arg("--version").output().ok()?;
+    let mut version_command = Command::new(path);
+    version_command.arg("--version").no_window();
+    let output = version_command.output().ok()?;
     let text = if output.stdout.is_empty() {
         String::from_utf8_lossy(&output.stderr).to_string()
     } else {
@@ -341,7 +350,9 @@ pub fn webview2_version() -> Option<String> {
         r"HKCU\SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}",
     ];
     for key in keys {
-        if let Ok(output) = Command::new("reg.exe").args(["query", key, "/v", "pv"]).output() {
+        let mut reg_command = Command::new("reg.exe");
+        reg_command.args(["query", key, "/v", "pv"]).no_window();
+        if let Ok(output) = reg_command.output() {
             if output.status.success() {
                 let text = String::from_utf8_lossy(&output.stdout);
                 if let Some(version) = text.split_whitespace().last() {
@@ -355,9 +366,11 @@ pub fn webview2_version() -> Option<String> {
 
 pub fn sunshine_service_status() -> AppResult<ServiceStatus> {
     let script = "Get-CimInstance Win32_Service -Filter \"Name LIKE '%sunshine%'\" | Select-Object Name,State,StartMode | ConvertTo-Json -Compress";
-    let output = Command::new("powershell.exe")
+    let mut powershell = Command::new("powershell.exe");
+    powershell
         .args(["-NoProfile", "-NonInteractive", "-Command", script])
-        .output()?;
+        .no_window();
+    let output = powershell.output()?;
     let text = String::from_utf8_lossy(&output.stdout);
     let trimmed = text.trim();
     if trimmed.is_empty() {
@@ -401,7 +414,7 @@ pub fn run_elevated(program: &Path, args: &[String]) -> AppResult<()> {
         .collect::<Vec<_>>()
         .join(",");
     let script = format!(
-        "$process = Start-Process -FilePath '{program}' -ArgumentList @({arguments}) -Verb RunAs -PassThru -Wait; exit $process.ExitCode"
+        "$process = Start-Process -FilePath '{program}' -ArgumentList @({arguments}) -Verb RunAs -WindowStyle Hidden -PassThru -Wait; exit $process.ExitCode"
     );
     run_elevated_powershell(&script)
 }
@@ -409,13 +422,15 @@ pub fn run_elevated(program: &Path, args: &[String]) -> AppResult<()> {
 pub fn run_elevated_powershell(script: &str) -> AppResult<()> {
     let command = format!(
         "$encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes(\"{}\")); \
-         $process = Start-Process -FilePath 'powershell.exe' -ArgumentList @('-NoProfile','-NonInteractive','-EncodedCommand',$encoded) -Verb RunAs -PassThru -Wait; \
+         $process = Start-Process -FilePath 'powershell.exe' -ArgumentList @('-NoProfile','-NonInteractive','-EncodedCommand',$encoded) -Verb RunAs -WindowStyle Hidden -PassThru -Wait; \
          exit $process.ExitCode",
         script.replace('"', "`\"")
     );
-    let status = Command::new("powershell.exe")
+    let mut powershell = Command::new("powershell.exe");
+    powershell
         .args(["-NoProfile", "-NonInteractive", "-Command", &command])
-        .status()?;
+        .no_window();
+    let status = powershell.status()?;
     if !status.success() {
         return Err(AppError::process("提权操作已取消或失败"));
     }

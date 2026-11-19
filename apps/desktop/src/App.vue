@@ -6,7 +6,10 @@
     <AppShell v-if="app.config && !isOnboarding">
       <router-view />
     </AppShell>
-    <router-view v-else-if="app.config" />
+    <div v-else-if="app.config" class="onboarding-frame">
+      <TitleBar :title="t('onboarding.title')" :subtitle="t('onboarding.subtitle')" />
+      <router-view />
+    </div>
     <div v-else class="boot-screen">
       <div class="boot-logo">Originium Stream</div>
       <div class="boot-hint">{{ t('common.loading') }}</div>
@@ -30,6 +33,7 @@ import { computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppShell from '@/components/AppShell.vue'
+import TitleBar from '@/components/TitleBar.vue'
 import SessionHud from '@/views/SessionHud.vue'
 import { useAppStore } from '@/stores/app'
 import { useThemeStore } from '@/stores/theme'
@@ -49,7 +53,11 @@ const isOnboarding = computed(() => route.name === 'onboarding')
 onMounted(async () => {
   await app.bootstrap()
   if (!app.config) return
-  await theme.apply(app.config.theme)
+  try {
+    await theme.load()
+  } catch {
+    await theme.apply(app.config.theme)
+  }
   i18n.global.locale.value = app.config.settings.language as 'zh-CN' | 'en'
   if (!app.config.onboardingComplete && route.path !== '/onboarding' && route.path !== '/hud') {
     await router.replace('/onboarding')
@@ -77,6 +85,17 @@ watch(
 </script>
 
 <style scoped>
+.onboarding-frame {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.onboarding-frame :deep(.onboarding-shell) {
+  flex: 1;
+  min-height: 0;
+}
+
 .boot-screen {
   height: 100vh;
   display: grid;

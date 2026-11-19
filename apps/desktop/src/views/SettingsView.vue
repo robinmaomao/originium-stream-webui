@@ -119,6 +119,13 @@
             <v-switch v-model="form.startMinimized" :label="t('settings.startMinimized')" hide-details />
             <v-switch v-model="form.closeToTray" :label="t('settings.closeToTray')" hide-details />
             <v-switch v-model="form.preferServiceMode" :label="t('settings.serviceMode')" hide-details />
+            <v-switch v-model="form.acrylic" :label="t('settings.acrylic')" hide-details />
+            <v-switch
+              :model-value="isDark"
+              :label="t('settings.darkMode')"
+              hide-details
+              @update:model-value="setThemeMode"
+            />
             <v-text-field v-model="form.globalHotkey" :label="t('settings.hotkey')" class="mt-3 mono" />
             <v-select
               v-model="form.updateChannel"
@@ -256,6 +263,8 @@ import StreamProfileForm from '@/components/StreamProfileForm.vue'
 import ThemeEditor from '@/components/ThemeEditor.vue'
 import { useAppStore } from '@/stores/app'
 import { useThemeStore } from '@/stores/theme'
+import { isLightTheme } from '@/utils/theme'
+import { applyWindowChrome } from '@/utils/window'
 import { availableLocales, i18n } from '@/locales'
 
 const { t } = useI18n()
@@ -279,6 +288,7 @@ const localeOptions = availableLocales
 
 const environment = computed(() => app.environment)
 const installedIds = computed(() => new Set(app.components.map((component) => component.id)))
+const isDark = computed(() => (themeStore.theme ? !isLightTheme(themeStore.theme) : true))
 
 const form = reactive<AppSettings>(defaultSettings())
 const themeModel = ref<ThemeConfig>(defaultTheme())
@@ -374,12 +384,21 @@ async function saveSettings() {
     await app.saveSettings({ ...form, defaultProfile: { ...form.defaultProfile } })
     await api.setAutostart(form.autostart)
     await api.setGlobalHotkey(form.globalHotkey)
+    await applyWindowChrome(form.acrylic, themeStore.theme)
     i18n.global.locale.value = form.language as 'zh-CN' | 'en'
     app.notify(t('common.save'), 'success')
   } catch (error) {
     app.notify(api.errorMessage(error), 'error')
   } finally {
     saving.value = false
+  }
+}
+
+async function setThemeMode(value: boolean | null) {
+  try {
+    await themeStore.applyPreset(value ? 'originium' : 'light')
+  } catch (error) {
+    app.notify(api.errorMessage(error), 'error')
   }
 }
 
@@ -491,6 +510,7 @@ function defaultSettings(): AppSettings {
     defaultProfile: defaultProfile(),
     updateChannel: 'stable',
     preferServiceMode: true,
+    acrylic: true,
   }
 }
 

@@ -71,3 +71,23 @@ hotkey. Native `SetParent` embedding is deferred to the fork capability
 `components.lock.json` lists capabilities (`control-pipe`, `embed-parent`,
 `session-events`, `no-webui`). The app checks capabilities before using
 fork-specific features and otherwise falls back to CLI/official behavior.
+
+## ADR-010 — Undecorated acrylic window
+
+**Status:** accepted
+
+The main window is undecorated and transparent so the Vue shell can render a
+fused title bar. Native Windows Acrylic is applied through Tauri's
+`set_effects` command and is user-toggleable; CSS glass remains as a fallback.
+The window keeps `WS_THICKFRAME` for native resize borders and uses explicit
+no-drag regions around interactive title-bar controls.
+
+## ADR-011 — CSP style nonce exception
+
+**Status:** accepted
+
+Vuetify injects its generated theme stylesheet at runtime, while Tauri injects a
+CSP nonce into the asset `index.html`. Browsers ignore `'unsafe-inline'` when a
+nonce is present, so Tauri's nonce injection for `style-src` is disabled via
+`dangerousDisableAssetCspModification: ["style-src"]`. Script nonces remain
+enabled; only inline style sources are relaxed to keep dynamic themes working.

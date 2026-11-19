@@ -31,7 +31,8 @@ All Sunshine and Moonlight settings live in the same UI, including a fully custo
 - **Complete settings coverage**
   - Sunshine: dynamic forms for every `/api/config` key (audio, video, network, input, applications, clients, advanced, troubleshooting).
   - Moonlight: full portable INI read/write plus a typed stream profile mapped to CLI flags.
-- **Theme engine** — color tokens, typography (custom Woff2/TTF/OTF), background images (opacity/blur/fill), presets, JSON import/export, reduced-motion and contrast-aware.
+- **Theme engine** — color tokens, typography (custom Woff2/TTF/OTF), background images (opacity/blur/fill), dark/light presets, JSON import/export, reduced-motion and contrast-aware.
+- **Fused title bar** — draggable custom title bar with window controls, integrated session/theme actions, and optional native acrylic translucency with a CSS fallback.
 - **Session HUD** — always-on-top compact overlay, global hotkey (`CommandOrControl+Alt+Shift+O`).
 - **Observability** — structured logs, host logs, diagnostics bundle export, no telemetry.
 

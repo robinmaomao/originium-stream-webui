@@ -16,6 +16,7 @@ use tokio::time::timeout;
 
 use crate::error::{AppError, AppResult};
 use crate::models::{Host, SessionSnapshot, SessionState, StreamProfile};
+use crate::process::NoWindow;
 use crate::store::Store;
 
 const LOG_TAIL: usize = 120;
@@ -317,11 +318,11 @@ impl SessionManager {
         );
 
         let mut command = Command::new(moonlight_exe);
-        command.args(&args).stdout(Stdio::piped()).stderr(Stdio::piped());
-        #[cfg(windows)]
-        {
-            command.creation_flags(0x0800_0000);
-        }
+        command
+            .args(&args)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .no_window();
 
         let mut child = command.spawn().map_err(|error| {
             AppError::process(format!("无法启动 moonlight（{}）: {error}", moonlight_exe.display()))
@@ -415,18 +416,15 @@ impl SessionManager {
         }
 
         if let Some(pid) = pid {
-            let _ = Command::new("taskkill.exe")
-                .args(["/PID", &pid.to_string(), "/T", "/F"])
-                .output()
-                .await;
+            let mut taskkill = Command::new("taskkill.exe");
+            taskkill.args(["/PID", &pid.to_string(), "/T", "/F"]).no_window();
+            let _ = taskkill.output().await;
         }
 
         if let Some(exe) = moonlight_exe {
-            let _ = timeout(
-                Duration::from_secs(8),
-                Command::new(exe).args(["quit", &host.address]).output(),
-            )
-            .await;
+            let mut quit = Command::new(exe);
+            quit.args(["quit", &host.address]).no_window();
+            let _ = timeout(Duration::from_secs(8), quit.output()).await;
         }
 
         {
@@ -439,11 +437,9 @@ impl SessionManager {
     }
 
     pub async fn quit_remote(moonlight_exe: &Path, host: &Host) -> AppResult<()> {
-        let _ = timeout(
-            Duration::from_secs(8),
-            Command::new(moonlight_exe).args(["quit", &host.address]).output(),
-        )
-        .await;
+        let mut quit = Command::new(moonlight_exe);
+        quit.args(["quit", &host.address]).no_window();
+        let _ = timeout(Duration::from_secs(8), quit.output()).await;
         Ok(())
     }
 }

@@ -55,6 +55,7 @@ export interface AppSettings {
   defaultProfile: StreamProfile
   updateChannel: string
   preferServiceMode: boolean
+  acrylic: boolean
 }
 
 export interface ThemeColors {

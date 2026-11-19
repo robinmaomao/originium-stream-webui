@@ -2,6 +2,8 @@ import { defineStore } from 'pinia'
 import * as api from '@/api'
 import type { AssetsInfo, ThemeConfig, ThemePreset } from '@/api/types'
 import { useAppStore } from './app'
+import { isLightTheme } from '@/utils/theme'
+import { applyWindowChrome } from '@/utils/window'
 
 export const useThemeStore = defineStore('theme', {
   state: () => ({
@@ -27,6 +29,7 @@ export const useThemeStore = defineStore('theme', {
       if (!theme) return
       this.theme = theme
       const root = document.documentElement
+      const light = isLightTheme(theme)
       root.style.setProperty('--originium-primary', theme.colors.primary)
       root.style.setProperty('--originium-secondary', theme.colors.secondary)
       root.style.setProperty('--originium-surface', theme.colors.surface)
@@ -40,8 +43,46 @@ export const useThemeStore = defineStore('theme', {
       root.style.setProperty('--originium-radius', `${theme.effects.rounded}px`)
       root.style.setProperty('--originium-bg-opacity', String(theme.background.opacity))
       root.style.setProperty('--originium-bg-blur', `${theme.background.blur}px`)
+      root.style.setProperty('--originium-text', light ? '#1F2937' : '#E8E8F0')
+      root.style.setProperty(
+        '--originium-text-muted',
+        light ? 'rgba(31, 41, 55, 0.68)' : 'rgba(232, 232, 240, 0.64)',
+      )
+      root.style.setProperty(
+        '--originium-text-faint',
+        light ? 'rgba(31, 41, 55, 0.46)' : 'rgba(232, 232, 240, 0.45)',
+      )
+      root.style.setProperty(
+        '--originium-border',
+        light ? 'rgba(15, 23, 42, 0.10)' : 'rgba(255, 255, 255, 0.07)',
+      )
+      root.style.setProperty(
+        '--originium-hover',
+        light ? 'rgba(15, 23, 42, 0.06)' : 'rgba(255, 255, 255, 0.07)',
+      )
+      root.style.setProperty(
+        '--originium-titlebar-bg',
+        light ? 'rgba(255, 255, 255, 0.62)' : 'rgba(10, 10, 16, 0.62)',
+      )
+      root.style.setProperty(
+        '--originium-nav-bg',
+        light ? 'rgba(255, 255, 255, 0.58)' : 'rgba(12, 12, 18, 0.58)',
+      )
+      root.style.setProperty(
+        '--originium-glass-bg',
+        light ? 'rgba(255, 255, 255, 0.72)' : 'rgba(22, 22, 30, 0.58)',
+      )
+      root.style.setProperty(
+        '--originium-shell-top',
+        light ? 'rgba(255, 255, 255, 0.64)' : 'rgba(10, 10, 16, 0.72)',
+      )
+      root.style.setProperty(
+        '--originium-shell-bottom',
+        light ? 'rgba(248, 247, 255, 0.78)' : 'rgba(10, 10, 16, 0.88)',
+      )
       root.dataset.motion = theme.effects.motion ? 'on' : 'off'
       root.dataset.preset = theme.preset
+      root.dataset.mode = light ? 'light' : 'dark'
 
       if (theme.background.image) {
         try {
@@ -57,7 +98,8 @@ export const useThemeStore = defineStore('theme', {
       }
 
       await this.registerFonts()
-      document.body.style.background = theme.colors.background
+      document.body.style.background = 'transparent'
+      await applyWindowChrome(useAppStore().config?.settings.acrylic ?? true, theme)
     },
     async registerFonts() {
       let style = document.getElementById('originium-custom-fonts') as HTMLStyleElement | null

@@ -96,6 +96,33 @@ pub fn show_main_window(app: AppHandle) {
 }
 
 #[tauri::command]
+pub fn set_window_effects(app: AppHandle, acrylic: bool, dark: bool) -> AppResult<()> {
+    #[cfg(windows)]
+    if let Some(window) = app.get_webview_window("main") {
+        use tauri::window::{Color, Effect, EffectsBuilder};
+
+        if acrylic {
+            let tint = if dark {
+                Color(18, 18, 24, 190)
+            } else {
+                Color(248, 247, 255, 205)
+            };
+            let effects = EffectsBuilder::new().effect(Effect::Acrylic).color(tint).build();
+            window
+                .set_effects(effects)
+                .map_err(|error| AppError::internal(error.to_string()))?;
+        } else {
+            window
+                .set_effects(None::<tauri::utils::config::WindowEffectsConfig>)
+                .map_err(|error| AppError::internal(error.to_string()))?;
+        }
+    }
+    #[cfg(not(windows))]
+    let _ = (app, acrylic, dark);
+    Ok(())
+}
+
+#[tauri::command]
 pub fn quit_app(app: AppHandle) {
     app.exit(0);
 }

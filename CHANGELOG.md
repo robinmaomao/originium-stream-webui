@@ -2,6 +2,21 @@
 
 All notable changes to this project are documented here.
 
+## [0.1.2] - 2026-11-19
+
+### Fixed
+
+- Fixed the fixed navigation drawer covering the left side of page content.
+- Fixed Vuetify theme variables being cleared when switching themes, which produced white empty buttons and invisible labels.
+- Suppressed console windows from service detection, environment probes, pairing, and session termination on Windows.
+- Allowed Vuetify's runtime theme stylesheet under Tauri's production CSP, so themed controls no longer render as blank white blocks.
+
+### Added
+
+- Integrated custom title bar with brand, page title, session status, theme toggle, and window controls.
+- Optional native acrylic background with a CSS glass fallback.
+- Dark/light theme switch in both the title bar and Settings.
+
 ## [0.1.1] - 2026-11-19
 
 ### Added

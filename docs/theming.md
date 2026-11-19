@@ -39,6 +39,11 @@ portability. The schema is versioned.
 - `effects.motion = false` disables animations and transitions.
 - Light themes are detected from background luminance and switch Vuetify to
   light mode automatically.
+- `settings.acrylic` (default `true`) enables the native Windows Acrylic
+  backdrop through Tauri's `set_effects`; the translucent CSS shell remains as
+  a fallback on unsupported systems.
+- The custom title bar follows the same light/dark tokens and exposes a
+  one-click theme toggle.
 
 ## Presets
 

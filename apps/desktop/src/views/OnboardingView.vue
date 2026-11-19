@@ -294,7 +294,7 @@ async function finish() {
 
 <style scoped>
 .onboarding-shell {
-  height: 100vh;
+  height: calc(100vh - 48px);
   display: grid;
   place-items: center;
   padding: 24px;

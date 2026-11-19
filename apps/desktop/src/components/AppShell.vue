@@ -1,39 +1,26 @@
 <template>
   <div class="originium-bg" />
   <div class="originium-shell">
-    <v-navigation-drawer
-      v-model="drawer"
-      :rail="rail"
-      permanent
-      class="originium-nav"
-      :width="252"
-      :rail-width="78"
-    >
-      <div class="brand" @click="rail = !rail">
-        <div class="brand-mark">◆</div>
-        <div v-if="!rail" class="brand-text">
-          <div class="brand-name">Originium <span class="text-gradient">Stream</span></div>
-          <div class="brand-version mono">v{{ app.appVersion }}</div>
+    <TitleBar :title="pageTitle" :subtitle="pageSubtitle" />
+
+    <div class="originium-body">
+      <aside class="originium-nav" :class="{ 'is-rail': rail }">
+        <div class="nav-scroll">
+          <v-list nav density="comfortable" class="px-2 pt-2">
+            <v-list-item
+              v-for="item in navItems"
+              :key="item.to"
+              :to="item.to"
+              :prepend-icon="item.icon"
+              :title="rail ? undefined : t(item.title)"
+              rounded="lg"
+              class="nav-item"
+              active-class="nav-item-active"
+            />
+          </v-list>
         </div>
-      </div>
 
-      <v-divider class="my-2" opacity="0.08" />
-
-      <v-list nav density="comfortable" class="px-2">
-        <v-list-item
-          v-for="item in navItems"
-          :key="item.to"
-          :to="item.to"
-          :prepend-icon="item.icon"
-          :title="rail ? undefined : t(item.title)"
-          rounded="lg"
-          class="nav-item"
-          active-class="nav-item-active"
-        />
-      </v-list>
-
-      <template #append>
-        <div class="pa-3">
+        <div class="nav-footer">
           <div v-if="!rail" class="session-mini glass pa-3 mb-3">
             <div class="d-flex align-center justify-space-between">
               <span class="section-label">{{ t('session.current') }}</span>
@@ -50,74 +37,43 @@
             block
             variant="tonal"
             color="primary"
-            :prepend-icon="rail ? undefined : 'mdi-weather-night'"
+            :prepend-icon="rail ? undefined : isLight ? 'mdi-white-balance-sunny' : 'mdi-weather-night'"
             @click="toggleQuickTheme"
           >
-            <v-icon v-if="rail" icon="mdi-weather-night" />
-            <span v-else>{{ themeStore.theme?.name }}</span>
+            <v-icon v-if="rail" :icon="isLight ? 'mdi-white-balance-sunny' : 'mdi-weather-night'" />
+            <span v-else>{{ isLight ? t('theme.light') : t('theme.dark') }}</span>
           </v-btn>
         </div>
-      </template>
-    </v-navigation-drawer>
+      </aside>
 
-    <div class="originium-main scroll-area">
-      <div class="app-bar">
-        <div class="min-width-0">
-          <div class="app-bar-title">{{ pageTitle }}</div>
-          <div class="app-bar-sub">{{ pageSubtitle }}</div>
+      <main class="originium-main scroll-area">
+        <div class="page">
+          <slot />
         </div>
-        <v-spacer />
-        <v-chip
-          v-if="session.active"
-          color="primary"
-          variant="flat"
-          class="mr-2"
-          @click="router.push('/session')"
-        >
-          <span class="status-dot online" />
-          {{ t(`session.${session.stateLabel}`) }}
-          <span v-if="session.snapshot?.appName" class="ml-2 opacity-80">
-            {{ session.snapshot.appName }}
-          </span>
-        </v-chip>
-        <v-btn icon variant="text" :title="t('session.toggleHud')" @click="toggleHud">
-          <v-icon icon="mdi-monitor-eye" />
-        </v-btn>
-        <v-btn icon variant="text" to="/logs" :title="t('nav.logs')">
-          <v-icon icon="mdi-text-box-outline" />
-        </v-btn>
-        <v-btn icon variant="text" to="/settings" :title="t('nav.settings')">
-          <v-icon icon="mdi-cog-outline" />
-        </v-btn>
-      </div>
-
-      <div class="page">
-        <slot />
-      </div>
+      </main>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useTheme } from 'vuetify'
 import { useAppStore } from '@/stores/app'
 import { useSessionStore } from '@/stores/session'
 import { useThemeStore } from '@/stores/theme'
-import { toggleHud } from '@/api'
 import { isLightTheme } from '@/utils/theme'
+import TitleBar from '@/components/TitleBar.vue'
 
 const app = useAppStore()
 const session = useSessionStore()
 const themeStore = useThemeStore()
 const route = useRoute()
-const router = useRouter()
 const { t } = useI18n()
 
 const rail = ref(false)
-const drawer = ref(true)
+const isLight = computed(() => (themeStore.theme ? isLightTheme(themeStore.theme) : false))
 
 const navItems = [
   { to: '/local', icon: 'mdi-desktop-tower-monitor', title: 'nav.local' },
@@ -171,9 +127,12 @@ watch(
   (theme) => {
     if (!theme) return
     const dark = !isLightTheme(theme)
+    const current = vuetifyTheme.themes.value.originium
     vuetifyTheme.themes.value.originium = {
+      ...current,
       dark,
       colors: {
+        ...current.colors,
         primary: theme.colors.primary,
         secondary: theme.colors.secondary,
         surface: theme.colors.surface,
@@ -184,14 +143,13 @@ watch(
         warning: theme.colors.warning,
         'on-surface': dark ? '#E8E8F0' : '#1F2937',
         'on-background': dark ? '#E8E8F0' : '#1F2937',
-        'on-primary': '#0B0B0F',
-        'on-secondary': '#0B0B0F',
+        'on-primary': dark ? '#0B0B0F' : '#FFFFFF',
+        'on-secondary': dark ? '#0B0B0F' : '#FFFFFF',
         'on-error': '#FFFFFF',
-        'on-info': '#0B0B0F',
-        'on-success': '#0B0B0F',
-        'on-warning': '#0B0B0F',
+        'on-info': dark ? '#0B0B0F' : '#FFFFFF',
+        'on-success': dark ? '#0B0B0F' : '#FFFFFF',
+        'on-warning': dark ? '#0B0B0F' : '#FFFFFF',
       },
-      variables: {},
     }
     vuetifyTheme.global.name.value = 'originium'
   },
@@ -199,7 +157,7 @@ watch(
 )
 
 async function toggleQuickTheme() {
-  const target = themeStore.theme?.preset === 'light' ? 'originium' : 'light'
+  const target = isLight.value ? 'originium' : 'light'
   try {
     await themeStore.applyPreset(target)
   } catch (error) {
@@ -209,66 +167,65 @@ async function toggleQuickTheme() {
 </script>
 
 <style scoped>
-.brand {
+.originium-shell {
+  height: 100vh;
   display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 18px 16px 10px;
-  cursor: pointer;
+  flex-direction: column;
 }
-.brand-mark {
-  width: 38px;
-  height: 38px;
-  display: grid;
-  place-items: center;
-  border-radius: 12px;
-  background: linear-gradient(140deg, var(--originium-primary), var(--originium-secondary));
-  color: #0b0b0f;
-  font-size: 1.1rem;
-  box-shadow: 0 8px 28px rgba(124, 77, 255, 0.45);
+
+.originium-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.originium-nav {
+  width: 252px;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--originium-nav-bg);
+  backdrop-filter: blur(20px) saturate(135%);
+  border-right: 1px solid var(--originium-border);
+  transition: width 180ms ease;
 }
-.brand-name {
-  font-weight: 700;
-  font-size: 0.95rem;
-  letter-spacing: 0.02em;
+
+.originium-nav.is-rail {
+  width: 78px;
 }
-.brand-version {
-  font-size: 0.68rem;
-  color: rgba(232, 232, 240, 0.45);
+
+.nav-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-top: 10px;
 }
+
+.nav-footer {
+  padding: 12px;
+  border-top: 1px solid var(--originium-border);
+}
+
 .nav-item {
   margin-bottom: 4px;
-  color: rgba(232, 232, 240, 0.72);
+  color: var(--originium-text-muted);
 }
+
 .nav-item-active {
-  background: rgba(124, 77, 255, 0.18) !important;
-  color: #fff !important;
+  background: color-mix(in srgb, var(--originium-primary) 18%, transparent) !important;
+  color: var(--originium-text) !important;
 }
-.app-bar {
-  position: sticky;
-  top: 0;
-  z-index: 5;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 20px 32px 14px;
-  background: linear-gradient(180deg, rgba(10, 10, 16, 0.92), rgba(10, 10, 16, 0.65), transparent);
-  backdrop-filter: blur(8px);
+
+.originium-main {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  overflow-y: auto;
 }
-.app-bar-title {
-  font-size: 1.05rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-.app-bar-sub {
-  font-size: 0.75rem;
-  color: rgba(232, 232, 240, 0.5);
-}
+
 .session-mini {
   border-radius: 14px;
-}
-.min-width-0 {
-  min-width: 0;
 }
 </style>

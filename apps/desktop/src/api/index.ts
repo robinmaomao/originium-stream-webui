@@ -45,6 +45,8 @@ export const setAutostart = (enabled: boolean) => invoke<void>('set_autostart', 
 export const getAutostart = () => invoke<boolean>('get_autostart')
 export const setGlobalHotkey = (accelerator: string) => invoke<string>('set_global_hotkey', { accelerator })
 export const showMainWindow = () => invoke<void>('show_main_window')
+export const setWindowEffects = (acrylic: boolean, dark: boolean) =>
+  invoke<void>('set_window_effects', { acrylic, dark })
 export const openMainWindow = () => invoke<void>('open_main_window')
 export const quitApp = () => invoke<void>('quit_app')
 export const toggleHud = () => invoke<void>('toggle_hud')

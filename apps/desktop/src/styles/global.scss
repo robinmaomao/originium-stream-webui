@@ -13,7 +13,21 @@
   --originium-bg-opacity: 0.35;
   --originium-bg-blur: 12px;
   --originium-bg-image: none;
+  --originium-text: #e8e8f0;
+  --originium-text-muted: rgba(232, 232, 240, 0.64);
+  --originium-text-faint: rgba(232, 232, 240, 0.45);
+  --originium-border: rgba(255, 255, 255, 0.07);
+  --originium-hover: rgba(255, 255, 255, 0.07);
+  --originium-titlebar-bg: rgba(10, 10, 16, 0.62);
+  --originium-nav-bg: rgba(12, 12, 18, 0.58);
+  --originium-glass-bg: rgba(22, 22, 30, 0.58);
+  --originium-shell-top: rgba(10, 10, 16, 0.72);
+  --originium-shell-bottom: rgba(10, 10, 16, 0.88);
   color-scheme: dark;
+}
+
+html[data-mode='light'] {
+  color-scheme: light;
 }
 
 html,
@@ -21,12 +35,12 @@ body,
 #app {
   height: 100%;
   margin: 0;
+  background: transparent;
 }
 
 body {
   font-family: var(--originium-font);
-  background: var(--originium-background);
-  color: #e8e8f0;
+  color: var(--originium-text);
   overflow: hidden;
 }
 
@@ -61,20 +75,21 @@ body {
   background:
     radial-gradient(circle at 20% 0%, rgba(124, 77, 255, 0.16), transparent 42%),
     radial-gradient(circle at 90% 10%, rgba(0, 229, 255, 0.1), transparent 38%),
-    linear-gradient(180deg, rgba(10, 10, 16, 0.92), rgba(10, 10, 16, 0.98));
+    linear-gradient(180deg, var(--originium-shell-top), var(--originium-shell-bottom));
   backdrop-filter: blur(2px);
 }
 
-.originium-nav {
-  background: rgba(12, 12, 18, 0.72) !important;
-  backdrop-filter: blur(18px);
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
+[data-acrylic='off'] .originium-shell {
+  background:
+    radial-gradient(circle at 20% 0%, rgba(124, 77, 255, 0.16), transparent 42%),
+    radial-gradient(circle at 90% 10%, rgba(0, 229, 255, 0.1), transparent 38%),
+    var(--originium-background);
 }
 
 .originium-main {
   flex: 1;
   min-width: 0;
-  height: 100vh;
+  height: 100%;
   overflow-y: auto;
   padding: 0;
 }
@@ -109,9 +124,9 @@ body {
 }
 
 .glass {
-  background: rgba(22, 22, 30, 0.66) !important;
-  backdrop-filter: blur(18px);
-  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  background: var(--originium-glass-bg) !important;
+  backdrop-filter: blur(18px) saturate(125%);
+  border: 1px solid var(--originium-border) !important;
   transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
 }
 
@@ -126,7 +141,7 @@ body {
 }
 
 .page-subtitle {
-  color: rgba(232, 232, 240, 0.6);
+  color: var(--originium-text-muted);
   margin-top: 4px;
 }
 
@@ -208,12 +223,37 @@ body {
 }
 
 .muted {
-  color: rgba(232, 232, 240, 0.58);
+  color: var(--originium-text-muted);
 }
 
 .section-label {
   text-transform: uppercase;
   letter-spacing: 0.14em;
   font-size: 0.68rem;
-  color: rgba(232, 232, 240, 0.45);
+  color: var(--originium-text-faint);
+}
+
+html[data-mode='light'] .log-tail {
+  color: rgba(31, 41, 55, 0.78);
+}
+
+html[data-mode='light'] .glass .cover,
+html[data-mode='light'] .cover {
+  background: rgba(15, 23, 42, 0.05);
+}
+
+html[data-mode='light'] .step {
+  background: rgba(15, 23, 42, 0.05);
+  color: rgba(31, 41, 55, 0.62);
+}
+
+html[data-mode='light'] .step.active {
+  color: #1f2937;
+}
+
+html[data-mode='light'] .onboarding-shell {
+  background:
+    radial-gradient(circle at 10% 0%, rgba(124, 77, 255, 0.16), transparent 45%),
+    radial-gradient(circle at 90% 10%, rgba(0, 229, 255, 0.12), transparent 40%),
+    #f6f4ff;
 }

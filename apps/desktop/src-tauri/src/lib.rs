@@ -5,6 +5,7 @@ mod error;
 mod logging;
 mod models;
 mod moonlight;
+mod process;
 mod state;
 mod store;
 mod sunshine;
@@ -80,6 +81,7 @@ pub fn run() {
             commands::system::get_autostart,
             commands::system::set_global_hotkey,
             commands::system::show_main_window,
+            commands::system::set_window_effects,
             commands::system::quit_app,
             commands::system::toggle_hud,
             commands::system::show_hud,

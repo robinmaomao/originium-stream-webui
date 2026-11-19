@@ -32,7 +32,7 @@ export const useAppStore = defineStore('app', {
     onboardingComplete: (state) => state.config?.onboardingComplete ?? false,
     isStreaming: (state) =>
       state.session?.state === 'streaming' || state.session?.state === 'launching',
-    appVersion: (state) => state.environment?.appVersion ?? '0.1.1',
+    appVersion: (state) => state.environment?.appVersion ?? '0.1.2',
   },
   actions: {
     notify(message: string, color = 'info', hint = '') {

@@ -104,6 +104,10 @@ impl Default for StreamProfile {
     }
 }
 
+fn default_true() -> bool {
+    true
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppSettings {
@@ -117,6 +121,8 @@ pub struct AppSettings {
     pub default_profile: StreamProfile,
     pub update_channel: String,
     pub prefer_service_mode: bool,
+    #[serde(default = "default_true")]
+    pub acrylic: bool,
 }
 
 impl Default for AppSettings {
@@ -132,6 +138,7 @@ impl Default for AppSettings {
             default_profile: StreamProfile::default(),
             update_channel: "stable".into(),
             prefer_service_mode: true,
+            acrylic: true,
         }
     }
 }
@@ -442,4 +449,17 @@ pub struct ThemePreset {
     pub id: String,
     pub name: String,
     pub theme: ThemeConfig,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn app_settings_missing_acrylic_defaults_to_true() {
+        let mut value = serde_json::to_value(AppSettings::default()).expect("serialize settings");
+        value.as_object_mut().expect("settings object").remove("acrylic");
+        let settings: AppSettings = serde_json::from_value(value).expect("deserialize settings");
+        assert!(settings.acrylic);
+    }
 }
