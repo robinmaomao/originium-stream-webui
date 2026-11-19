@@ -2,7 +2,7 @@
   <div v-if="host">
     <div class="d-flex ga-3 align-center mb-5 flex-wrap">
       <v-btn icon variant="text" @click="router.back()">
-        <v-icon>mdi-arrow-left</v-icon>
+        <v-icon icon="mdi-arrow-left" />
       </v-btn>
       <div class="min-width-0">
         <div class="page-title text-truncate">{{ host.name }}</div>
@@ -139,7 +139,7 @@
     <PairDialog v-model="pairOpen" :host="host" @paired="onPaired" />
   </div>
   <v-card v-else class="glass pa-10 text-center" elevation="0">
-    <v-icon size="48" color="warning">mdi-help-circle-outline</v-icon>
+    <v-icon size="48" color="warning" icon="mdi-help-circle-outline" />
     <div class="text-h6 mt-3">{{ t('common.notFound') }}</div>
   </v-card>
 </template>

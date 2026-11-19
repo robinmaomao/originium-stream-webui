@@ -204,6 +204,7 @@ pub(crate) fn toggle_hud(app: &AppHandle) {
         if visible {
             let _ = hud.hide();
         } else {
+            let _ = hud.eval("window.location.hash = '#/hud'");
             let _ = hud.show();
             let _ = hud.set_focus();
         }

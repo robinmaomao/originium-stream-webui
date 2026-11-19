@@ -60,7 +60,7 @@
             <div class="text-h6">{{ t('session.logTail') }}</div>
             <v-spacer />
             <v-btn icon variant="text" @click="refresh">
-              <v-icon>mdi-refresh</v-icon>
+              <v-icon icon="mdi-refresh" />
             </v-btn>
           </div>
           <pre class="mono text-caption log-tail">{{ (snapshot.logTail ?? []).join('\n') || '—' }}</pre>
@@ -69,7 +69,7 @@
     </v-row>
 
     <v-card v-else class="glass pa-12 text-center" elevation="0">
-      <v-icon size="64" color="primary" class="mb-4">mdi-play-circle-outline</v-icon>
+      <v-icon size="64" color="primary" class="mb-4" icon="mdi-play-circle-outline" />
       <div class="text-h5">{{ t('session.noSession') }}</div>
       <div class="muted mt-2">{{ t('hostDetail.launchHint') }}</div>
       <v-btn class="mt-6" color="primary" to="/hosts" prepend-icon="mdi-lan">

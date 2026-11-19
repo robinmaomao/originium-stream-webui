@@ -51,7 +51,7 @@ onMounted(async () => {
   if (!app.config) return
   await theme.apply(app.config.theme)
   i18n.global.locale.value = app.config.settings.language as 'zh-CN' | 'en'
-  if (!app.config.onboardingComplete && route.path !== '/onboarding') {
+  if (!app.config.onboardingComplete && route.path !== '/onboarding' && route.path !== '/hud') {
     await router.replace('/onboarding')
   } else if (app.config.onboardingComplete && route.path === '/') {
     await router.replace('/local')

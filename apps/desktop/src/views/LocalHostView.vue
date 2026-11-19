@@ -15,7 +15,7 @@
       <v-col cols="12" lg="6">
         <v-card class="glass pa-5 h-100" elevation="0">
           <div class="d-flex align-center ga-3 mb-4">
-            <v-icon color="primary" size="28">mdi-desktop-tower-monitor</v-icon>
+            <v-icon color="primary" size="28" icon="mdi-desktop-tower-monitor" />
             <div>
               <div class="text-h6">{{ t('local.environment') }}</div>
               <div class="text-caption muted">{{ environment?.platform }} / {{ environment?.arch }}</div>
@@ -56,7 +56,7 @@
       <v-col cols="12" lg="6">
         <v-card class="glass pa-5 h-100" elevation="0">
           <div class="d-flex align-center ga-3 mb-4">
-            <v-icon :color="serviceRunning ? 'success' : 'warning'" size="28">mdi-weather-sunny</v-icon>
+            <v-icon :color="serviceRunning ? 'success' : 'warning'" size="28" icon="mdi-weather-sunny" />
             <div>
               <div class="text-h6">{{ t('local.service') }}</div>
               <div class="text-caption muted">
@@ -129,7 +129,7 @@
       <v-col cols="12" lg="6">
         <v-card class="glass pa-5 h-100" elevation="0">
           <div class="d-flex align-center ga-3 mb-4">
-            <v-icon color="info" size="28">mdi-lan</v-icon>
+            <v-icon color="info" size="28" icon="mdi-lan" />
             <div class="text-h6">{{ t('local.addresses') }}</div>
           </div>
           <div class="d-flex ga-2 flex-wrap">
@@ -153,14 +153,14 @@
       <v-col cols="12" lg="6">
         <v-card class="glass pa-5 h-100" elevation="0">
           <div class="d-flex align-center ga-3 mb-4">
-            <v-icon color="secondary" size="28">mdi-key-chain</v-icon>
+            <v-icon color="secondary" size="28" icon="mdi-key-chain" />
             <div>
               <div class="text-h6">{{ t('local.pending') }}</div>
               <div class="text-caption muted">{{ localHost?.name ?? t('local.credentials') }}</div>
             </div>
             <v-spacer />
             <v-btn icon variant="text" :loading="pairingLoading" @click="loadPairings">
-              <v-icon>mdi-refresh</v-icon>
+              <v-icon icon="mdi-refresh" />
             </v-btn>
           </div>
 
@@ -173,7 +173,7 @@
           <v-list v-else density="comfortable" class="bg-transparent">
             <v-list-item v-for="pairing in pairings" :key="pairing.id" rounded="lg">
               <template #prepend>
-                <v-icon color="primary">mdi-cellphone-link</v-icon>
+                <v-icon color="primary" icon="mdi-cellphone-link" />
               </template>
               <v-list-item-title>{{ pairing.name }}</v-list-item-title>
               <v-list-item-subtitle class="mono">{{ pairing.address }}</v-list-item-subtitle>

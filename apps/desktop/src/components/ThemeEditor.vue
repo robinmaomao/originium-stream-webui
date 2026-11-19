@@ -74,7 +74,7 @@
                 variant="tonal"
                 @click="useFont(font)"
               >
-                <v-icon start size="14">mdi-format-font</v-icon>
+                <v-icon start size="14" icon="mdi-format-font" />
                 {{ font }}
               </v-chip>
             </div>

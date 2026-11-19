@@ -74,7 +74,7 @@
     <v-dialog v-model="rawDialog" max-width="900">
       <v-card class="glass pa-2">
         <v-card-title class="d-flex align-center ga-2">
-          <v-icon color="primary">mdi-code-json</v-icon>
+          <v-icon color="primary" icon="mdi-code-json" />
           JSON
         </v-card-title>
         <v-card-text>

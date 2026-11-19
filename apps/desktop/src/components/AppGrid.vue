@@ -34,7 +34,7 @@
             {{ app.name.slice(0, 1).toUpperCase() }}
           </div>
           <div class="cover-overlay">
-            <v-icon size="34" color="white">mdi-play-circle</v-icon>
+            <v-icon size="34" color="white" icon="mdi-play-circle" />
           </div>
         </div>
         <div class="pa-3">

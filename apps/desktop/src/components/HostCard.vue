@@ -3,7 +3,7 @@
     <div class="d-flex align-start justify-space-between pa-4 pb-2">
       <div class="d-flex align-center ga-3 min-width-0">
         <div class="host-avatar">
-          <v-icon size="22">mdi-desktop-tower</v-icon>
+          <v-icon size="22" icon="mdi-desktop-tower" />
         </div>
         <div class="min-width-0">
           <div class="text-subtitle-1 font-weight-bold text-truncate">{{ host.name }}</div>
@@ -13,7 +13,7 @@
       <v-menu>
         <template #activator="{ props }">
           <v-btn icon variant="text" size="small" v-bind="props">
-            <v-icon>mdi-dots-vertical</v-icon>
+            <v-icon icon="mdi-dots-vertical" />
           </v-btn>
         </template>
         <v-list density="compact">
@@ -41,7 +41,7 @@
         {{ host.source === 'mdns' ? 'mDNS' : t('hosts.addManual') }}
       </v-chip>
       <v-chip v-if="host.favorite" size="small" variant="tonal" color="warning">
-        <v-icon start size="14">mdi-star</v-icon>
+        <v-icon start size="14" icon="mdi-star" />
         {{ t('common.yes') }}
       </v-chip>
     </div>
@@ -64,7 +64,7 @@
       </v-btn>
       <v-spacer />
       <v-btn icon variant="text" :title="t('hosts.detail')" @click="$emit('detail', host)">
-        <v-icon>mdi-arrow-right</v-icon>
+        <v-icon icon="mdi-arrow-right" />
       </v-btn>
     </div>
   </v-card>

@@ -108,6 +108,7 @@ pub fn toggle_hud(app: AppHandle) {
 #[tauri::command]
 pub fn show_hud(app: AppHandle) {
     if let Some(hud) = app.get_webview_window("hud") {
+        let _ = hud.eval("window.location.hash = '#/hud'");
         let _ = hud.show();
         let _ = hud.set_focus();
     }

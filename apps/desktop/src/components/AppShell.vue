@@ -2,7 +2,7 @@
   <div class="originium-bg" />
   <div class="originium-shell">
     <v-navigation-drawer
-      v-model="rail"
+      v-model="drawer"
       :rail="rail"
       permanent
       class="originium-nav"
@@ -53,7 +53,7 @@
             :prepend-icon="rail ? undefined : 'mdi-weather-night'"
             @click="toggleQuickTheme"
           >
-            <v-icon v-if="rail">mdi-weather-night</v-icon>
+            <v-icon v-if="rail" icon="mdi-weather-night" />
             <span v-else>{{ themeStore.theme?.name }}</span>
           </v-btn>
         </div>
@@ -81,13 +81,13 @@
           </span>
         </v-chip>
         <v-btn icon variant="text" :title="t('session.toggleHud')" @click="toggleHud">
-          <v-icon>mdi-monitor-eye</v-icon>
+          <v-icon icon="mdi-monitor-eye" />
         </v-btn>
         <v-btn icon variant="text" to="/logs" :title="t('nav.logs')">
-          <v-icon>mdi-text-box-outline</v-icon>
+          <v-icon icon="mdi-text-box-outline" />
         </v-btn>
         <v-btn icon variant="text" to="/settings" :title="t('nav.settings')">
-          <v-icon>mdi-cog-outline</v-icon>
+          <v-icon icon="mdi-cog-outline" />
         </v-btn>
       </div>
 
@@ -117,6 +117,7 @@ const router = useRouter()
 const { t } = useI18n()
 
 const rail = ref(false)
+const drawer = ref(true)
 
 const navItems = [
   { to: '/local', icon: 'mdi-desktop-tower-monitor', title: 'nav.local' },

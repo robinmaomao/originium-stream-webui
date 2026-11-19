@@ -2,7 +2,7 @@
   <v-dialog v-model="open" max-width="640" persistent>
     <v-card class="glass pa-2">
       <v-card-title class="d-flex align-center ga-3">
-        <v-icon color="primary">mdi-desktop-tower</v-icon>
+        <v-icon color="primary" icon="mdi-desktop-tower" />
         {{ host ? t('hosts.edit') : t('hosts.addManual') }}
       </v-card-title>
       <v-card-text>

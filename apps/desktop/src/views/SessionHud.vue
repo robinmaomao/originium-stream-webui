@@ -31,7 +31,7 @@
         </v-btn>
         <v-spacer />
         <v-btn size="small" variant="text" icon @click="hide">
-          <v-icon>mdi-close</v-icon>
+          <v-icon icon="mdi-close" />
         </v-btn>
       </div>
     </div>

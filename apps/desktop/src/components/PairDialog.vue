@@ -2,7 +2,7 @@
   <v-dialog v-model="open" max-width="480" persistent>
     <v-card class="glass pa-2">
       <v-card-title class="d-flex align-center ga-3">
-        <v-icon color="primary">mdi-key-chain</v-icon>
+        <v-icon color="primary" icon="mdi-key-chain" />
         {{ t('common.pair') }} · {{ host?.name }}
       </v-card-title>
       <v-card-text>

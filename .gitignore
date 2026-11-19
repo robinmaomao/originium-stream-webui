@@ -11,3 +11,4 @@ apps/desktop/dist/
 .vscode/
 coverage/
 components/dev/
+artifacts/

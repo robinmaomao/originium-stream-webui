@@ -23,8 +23,8 @@
         </div>
       </div>
 
-      <v-window v-model="step">
-        <v-window-item :value="0">
+      <div class="step-body">
+        <div v-if="step === 0">
           <div class="text-center py-8">
             <div class="hero-mark">◆</div>
             <div class="text-h5 font-weight-bold mt-6">{{ t('app.name') }}</div>
@@ -41,13 +41,13 @@
               </v-chip>
             </div>
           </div>
-        </v-window-item>
+        </div>
 
-        <v-window-item :value="1">
+        <div v-if="step === 1">
           <p class="text-body-1 mb-4">{{ t('onboarding.hostIntro') }}</p>
           <v-card class="glass pa-4 mb-4" elevation="0">
             <div class="d-flex align-center ga-3 mb-3">
-              <v-icon color="primary">mdi-weather-sunny</v-icon>
+              <v-icon color="primary" icon="mdi-weather-sunny" />
               <div class="font-weight-medium">Sunshine</div>
               <v-spacer />
               <v-chip :color="environment?.sunshineInstalled ? 'success' : 'warning'" variant="tonal" size="small">
@@ -98,13 +98,13 @@
             <div class="text-caption muted mt-2">{{ t('onboarding.serviceHint') }}</div>
           </v-card>
           <v-alert v-if="hostError" type="error" variant="tonal">{{ hostError }}</v-alert>
-        </v-window-item>
+        </div>
 
-        <v-window-item :value="2">
+        <div v-if="step === 2">
           <p class="text-body-1 mb-4">{{ t('onboarding.clientIntro') }}</p>
           <v-card class="glass pa-4" elevation="0">
             <div class="d-flex align-center ga-3">
-              <v-icon color="primary">mdi-play-circle-outline</v-icon>
+              <v-icon color="primary" icon="mdi-play-circle-outline" />
               <div class="font-weight-medium">Moonlight</div>
               <v-spacer />
               <v-chip :color="environment?.moonlightInstalled ? 'success' : 'warning'" variant="tonal" size="small">
@@ -129,9 +129,9 @@
               class="mt-3"
             />
           </v-card>
-        </v-window-item>
+        </div>
 
-        <v-window-item :value="3">
+        <div v-if="step === 3">
           <p class="text-body-1 mb-4">{{ t('onboarding.themeIntro') }}</p>
           <div class="d-flex ga-3 flex-wrap">
             <v-card
@@ -146,16 +146,16 @@
               <div class="pa-3 text-body-2">{{ preset.name }}</div>
             </v-card>
           </div>
-        </v-window-item>
+        </div>
 
-        <v-window-item :value="4">
+        <div v-if="step === 4">
           <div class="text-center py-8">
-            <v-icon size="56" color="success">mdi-check-decagram</v-icon>
+            <v-icon size="56" color="success" icon="mdi-check-decagram" />
             <div class="text-h5 font-weight-bold mt-4">{{ t('onboarding.doneTitle') }}</div>
             <div class="muted mt-2">{{ t('onboarding.doneDesc') }}</div>
           </div>
-        </v-window-item>
-      </v-window>
+        </div>
+      </div>
 
       <div class="d-flex align-center ga-3 mt-6">
         <v-btn variant="text" :disabled="step === 0" @click="step--">{{ t('common.cancel') }}</v-btn>

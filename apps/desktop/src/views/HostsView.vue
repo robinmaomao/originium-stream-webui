@@ -24,7 +24,7 @@
         <v-col v-for="device in hosts.discovered" :key="`${device.address}:${device.port}`" cols="12" md="6" lg="4">
           <v-card class="glass pa-4" elevation="0">
             <div class="d-flex align-center ga-3">
-              <v-icon color="secondary">mdi-access-point</v-icon>
+              <v-icon color="secondary" icon="mdi-access-point" />
               <div class="min-width-0">
                 <div class="text-body-1 font-weight-medium text-truncate">{{ device.name }}</div>
                 <div class="text-caption muted mono">{{ device.address }}:{{ device.port }}</div>
@@ -54,7 +54,7 @@
       </v-col>
     </v-row>
     <v-card v-else class="glass pa-10 text-center" elevation="0">
-      <v-icon size="52" color="primary" class="mb-3">mdi-lan-disconnect</v-icon>
+      <v-icon size="52" color="primary" class="mb-3" icon="mdi-lan-disconnect" />
       <div class="text-h6">{{ t('hosts.noHosts') }}</div>
       <div class="muted mt-2">{{ t('hosts.noDiscovered') }}</div>
     </v-card>
