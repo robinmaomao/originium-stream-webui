@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.0.0",
-    "@types/node": "^22.0.0",
+    "@types/node": "^26.6.6",
     "@vitejs/plugin-vue": "^6.0.0",
     "@vue/test-utils": "^2.4.6",
     "eslint": "^9.0.0",
